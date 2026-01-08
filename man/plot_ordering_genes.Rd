@@ -11,6 +11,6 @@ plot_ordering_genes(cds)
 }
 \description{
 Each gray point in the plot is a gene. The black dots are those that were included
-in the last call to setOrderingFilter. The red curve shows the mean-variance 
+in the last call to setOrderingFilter. The red curve shows the mean-variance
 model learning by estimateDispersions().
 }

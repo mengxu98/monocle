@@ -1,9 +1,8 @@
 Package: monocle
 Type: Package
-Title: Clustering, differential expression, and trajectory analysis for single-
-    cell RNA-Seq
-Version: 2.9.0
-Date: 2017-04-13
+Title: Clustering, differential expression, and trajectory analysis for single-cell RNA-Seq
+Version: 2.9.1
+Date: 2026-01-08
 Author: Cole Trapnell
 Maintainer: Cole Trapnell <coletrap@uw.edu>
 Description: Monocle performs differential expression and time-series analysis
@@ -14,6 +13,7 @@ Description: Monocle performs differential expression and time-series analysis
     other useful tasks on single cell expression data.  It is designed to work
     with RNA-Seq and qPCR data, but could be used with other types as well.
 License: Artistic-2.0
+Encoding: UTF-8
 Depends:
     R (>= 2.10.0),
     methods,
@@ -48,22 +48,20 @@ Imports:
     slam,
     viridis,
     stats,
-    biocViews,
+    utils,
+    rlang,
     RANN(>= 2.5),
     Rcpp (>= 0.12.0)
 LinkingTo: Rcpp
 Suggests:
     destiny,
     Hmisc,
-    knitr,
     Seurat,
     scater,
     testthat
-VignetteBuilder: knitr
-Roxygen: list(wrap = FALSE)
 LazyData: true
 biocViews: Sequencing, RNASeq, GeneExpression, DifferentialExpression,
     Infrastructure, DataImport, DataRepresentation, Visualization,
     Clustering, MultipleComparison, QualityControl
 Packaged: 2014-04-07 21:31:54 UTC; sarora
-RoxygenNote: 6.0.1
+RoxygenNote: 7.3.3

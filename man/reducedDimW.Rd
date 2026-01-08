@@ -13,7 +13,7 @@ reducedDimW(cds)
 A matrix, where each row is a set of whitened expression values for a feature and columns are cells.
 }
 \description{
-Retrieves the expression values for each cell (as a matrix) after whitening 
+Retrieves the expression values for each cell (as a matrix) after whitening
 during dimensionality reduction.
 }
 \examples{

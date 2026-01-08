@@ -24,8 +24,8 @@ supports Scran and Seurat packages.
 lung <- load_lung()
 seurat_lung <- exportCDS(lung)
 seurat_lung_all <- exportCDS(lung, export_all = T)
-scater_lung <- exportCDS(lung, export_to = 'Scater')
-scater_lung_all <- exportCDS(lung, export_to = 'Scater', export_all = T)
+scater_lung <- exportCDS(lung, export_to = "Scater")
+scater_lung_all <- exportCDS(lung, export_to = "Scater", export_all = T)
 
 importCDS(seurat_lung)
 importCDS(seurat_lung, import_all = T)

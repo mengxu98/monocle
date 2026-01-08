@@ -4,8 +4,13 @@
 \alias{newCellDataSet}
 \title{Creates a new CellDateSet object.}
 \usage{
-newCellDataSet(cellData, phenoData = NULL, featureData = NULL,
-  lowerDetectionLimit = 0.1, expressionFamily = VGAM::negbinomial.size())
+newCellDataSet(
+  cellData,
+  phenoData = NULL,
+  featureData = NULL,
+  lowerDetectionLimit = 0.1,
+  expressionFamily = VGAM::negbinomial.size()
+)
 }
 \arguments{
 \item{cellData}{expression data matrix for an experiment}
@@ -26,9 +31,9 @@ Creates a new CellDateSet object.
 }
 \examples{
 \dontrun{
-sample_sheet_small <- read.delim("../data/sample_sheet_small.txt", row.names=1)
+sample_sheet_small <- read.delim("../data/sample_sheet_small.txt", row.names = 1)
 sample_sheet_small$Time <- as.factor(sample_sheet_small$Time)
-gene_annotations_small <- read.delim("../data/gene_annotations_small.txt", row.names=1)
+gene_annotations_small <- read.delim("../data/gene_annotations_small.txt", row.names = 1)
 fpkm_matrix_small <- read.delim("../data/fpkm_matrix_small.txt")
 pd <- new("AnnotatedDataFrame", data = sample_sheet_small)
 fd <- new("AnnotatedDataFrame", data = gene_annotations_small)

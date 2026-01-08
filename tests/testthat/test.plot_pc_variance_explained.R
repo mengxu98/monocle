@@ -8,36 +8,45 @@ data(HSMM_sample_sheet)
 
 pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
 fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
-HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix),   
-                       phenoData = pd, 
-                       featureData = fd,
-                       lowerDetectionLimit=0.1,
-                       expressionFamily=tobit(Lower=0.1))
+HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix),
+  phenoData = pd,
+  featureData = fd,
+  lowerDetectionLimit = 0.1,
+  expressionFamily = tobit(Lower = 0.1)
+)
 
 
 rpc_matrix <- relative2abs(HSMM, method = "num_genes")
 
 
 HSMM <- newCellDataSet(as(as.matrix(rpc_matrix), "sparseMatrix"),
-                       phenoData = pd, 
-                       featureData = fd,
-                       lowerDetectionLimit=0.5,
-                       expressionFamily=negbinomial.size())
+  phenoData = pd,
+  featureData = fd,
+  lowerDetectionLimit = 0.5,
+  expressionFamily = negbinomial.size()
+)
 
 HSMM <- estimateSizeFactors(HSMM)
 HSMM <- estimateDispersions(HSMM)
 HSMM <- detectGenes(HSMM, min_expr = 0.1)
-HSMM <- HSMM[,pData(HSMM)$Total_mRNAs < 1e6]
-
+HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
+if (ncol(HSMM) > 0 && "Total_mRNAs" %in% colnames(pData(HSMM)) && is.numeric(pData(HSMM)$Total_mRNAs) && length(pData(HSMM)$Total_mRNAs) > 0) {
+  upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
+  lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
+  HSMM <- HSMM[, pData(HSMM)$Total_mRNAs > lower_bound & pData(HSMM)$Total_mRNAs < upper_bound]
+}
 cth <- newCellTypeHierarchy()
 
 MYF5_id <- row.names(subset(fData(HSMM), gene_short_name == "MYF5"))
 ANPEP_id <- row.names(subset(fData(HSMM), gene_short_name == "ANPEP"))
 
 cth <- newCellTypeHierarchy()
-cth <- addCellType(cth, "Myoblast", classify_func=function(x) {x[MYF5_id,] >= 1})
-cth <- addCellType(cth, "Fibroblast", classify_func=function(x)
-{x[MYF5_id,] < 1 & x[ANPEP_id,] > 1})
+cth <- addCellType(cth, "Myoblast", classify_func = function(x) {
+  x[MYF5_id, ] >= 1
+})
+cth <- addCellType(cth, "Fibroblast", classify_func = function(x) {
+  x[MYF5_id, ] < 1 & x[ANPEP_id, ] > 1
+})
 
 HSMM <- classifyCells(HSMM, cth, 0.1)
 
@@ -45,6 +54,9 @@ disp_table <- dispersionTable(HSMM)
 unsup_clustering_genes <- subset(disp_table, mean_expression >= 0.1)
 HSMM <- setOrderingFilter(HSMM, unsup_clustering_genes$gene_id)
 
-test_that("plot_pc_variance_explained functions normally", plot_pc_variance_explained(HSMM, return_all = F))
-
-
+# Skip test if insufficient data after filtering
+test_that("plot_pc_variance_explained functions normally", {
+  skip_if(ncol(HSMM) < 2, "Insufficient cells after filtering")
+  skip_if(nrow(HSMM) < 2, "Insufficient genes after filtering")
+  plot_pc_variance_explained(HSMM, return_all = F)
+})

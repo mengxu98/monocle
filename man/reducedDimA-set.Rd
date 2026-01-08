@@ -15,7 +15,7 @@ reducedDimA(cds) <- value
 An updated CellDataSet object
 }
 \description{
-Sets the weights transform the cells' coordinates in the reduced dimension 
+Sets the weights transform the cells' coordinates in the reduced dimension
 space back to the full (whitened) space.
 }
 \examples{

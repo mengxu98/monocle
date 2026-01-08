@@ -6,11 +6,11 @@
 \alias{CellDataSet-class}
 \title{The CellDataSet class}
 \description{
-The main class used by Monocle to hold single cell expression data. 
+The main class used by Monocle to hold single cell expression data.
 CellDataSet extends the basic Bioconductor ExpressionSet class.
 }
 \details{
-This class is initialized from a matrix of expression values Methods that 
+This class is initialized from a matrix of expression values Methods that
 operate on CellDataSet objects constitute the basic Monocle workflow.
 }
 \section{Fields}{

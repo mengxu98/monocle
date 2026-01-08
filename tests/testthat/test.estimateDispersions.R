@@ -4,27 +4,30 @@ library(dplyr)
 context("estimateDispersions")
 
 
-test_that("estimateDispersion() properly validates its input",{
+test_that("estimateDispersion() properly validates its input", {
   data(HSMM_expr_matrix)
   data(HSMM_gene_annotation)
   data(HSMM_sample_sheet)
-  
+
   pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
   fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
   HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix),
-                         phenoData = pd, 
-                         featureData = fd,
-                         lowerDetectionLimit=1,
-                         expressionFamily=tobit())
+    phenoData = pd,
+    featureData = fd,
+    lowerDetectionLimit = 1,
+    expressionFamily = tobit()
+  )
   HSMM <- estimateSizeFactors(HSMM)
   expect_error(estimateDispersions(HSMM))
-  
-  
-  
+
+
+
   lung <- load_lung()
   lung_pData <- pData(lung)
-  expect_equal(colnames(lung_pData), c("file", "total_mass", "internal_scale", "external_scale","median_transcript_frags", "BioSample", "age", "genotype", "Sample.Name", "SRA.Sample", "MBases", "MBytes", "SRA.Study", "BioProject", "source_name", "strain", "tissue", "Assay.Type", "Center.Name", 
-                                      "Platform", "Consent", "Time", "Size_Factor", "Total_mRNAs", "endogenous_RNA", "Pseudotime", "State", "Parent", "num_genes_expressed"))
+  expect_equal(colnames(lung_pData), c(
+    "file", "total_mass", "internal_scale", "external_scale", "median_transcript_frags", "BioSample", "age", "genotype", "Sample.Name", "SRA.Sample", "MBases", "MBytes", "SRA.Study", "BioProject", "source_name", "strain", "tissue", "Assay.Type", "Center.Name",
+    "Platform", "Consent", "Time", "Size_Factor", "Total_mRNAs", "endogenous_RNA", "Pseudotime", "State", "Parent", "num_genes_expressed"
+  ))
   expect_true(all(lung_pData$total_mass >= 392))
   expect_true(all(lung_pData$total_mass <= 4086580))
   expect_true(all(lung_pData$internal_scale >= 0.00153031))
@@ -62,7 +65,7 @@ test_that("estimateDispersion() properly validates its input",{
   expect_true(all(lung_pData$Pseudotime >= 0))
   expect_true(all(lung_pData$Pseudotime <= 16.67064))
   expect_equal(levels(lung_pData$State), c("1", "2", "3"))
-  expect_true((is.na(substring(lung_pData$Parent, 0, 6)) || substring(lung_pData$Parent, 0, 6) == "SRR103"))
+  expect_true(all(is.na(substring(lung_pData$Parent, 0, 6)) | substring(lung_pData$Parent, 0, 6) == "SRR103"))
   expect_true(all(lung_pData$num_genes_expressed >= 10))
-  expect_true(all(lung_pData$num_genes_expressed <= 196)) 
+  expect_true(all(lung_pData$num_genes_expressed <= 196))
 })

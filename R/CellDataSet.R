@@ -1,11 +1,11 @@
-setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
+setOldClass(c("igraph"), prototype = structure(list(), class = "igraph"))
 
 #' The CellDataSet class
 #'
-#' The main class used by Monocle to hold single cell expression data. 
+#' The main class used by Monocle to hold single cell expression data.
 #' CellDataSet extends the basic Bioconductor ExpressionSet class.
-#' 
-#' This class is initialized from a matrix of expression values Methods that 
+#'
+#' This class is initialized from a matrix of expression values Methods that
 #' operate on CellDataSet objects constitute the basic Monocle workflow.
 #'
 #'
@@ -20,27 +20,28 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @field dispFitInfo An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.
 #' @field dim_reduce_type A string encoding how this CellDataSet has been reduced in dimensionality
 #' @field auxOrderingData An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.
-#' @name CellDataSet 
+#' @name CellDataSet
 #' @rdname CellDataSet
 #' @aliases CellDataSet-class
 #' @exportClass CellDataSet
 #' @importFrom Biobase ExpressionSet
-setClass( "CellDataSet", 
-          contains = "ExpressionSet",
-          slots = c(reducedDimS = "matrix",
-                    reducedDimW = "matrix",
-                    reducedDimA = "matrix",
-                    reducedDimK = "matrix",
-                    minSpanningTree="igraph",
-                    cellPairwiseDistances="matrix",
-                    expressionFamily="vglmff",
-                    lowerDetectionLimit="numeric",
-                    dispFitInfo = "environment",
-                    dim_reduce_type="character",
-                    auxOrderingData = "environment", 
-                    auxClusteringData = "environment"
-                    ),
-          prototype = prototype( new( "VersionedBiobase",
-                                      versions = c( classVersion("ExpressionSet"), CellDataSet = "1.2.0" ) ))
+setClass("CellDataSet",
+  contains = "ExpressionSet",
+  slots = c(
+    reducedDimS = "matrix",
+    reducedDimW = "matrix",
+    reducedDimA = "matrix",
+    reducedDimK = "matrix",
+    minSpanningTree = "igraph",
+    cellPairwiseDistances = "matrix",
+    expressionFamily = "vglmff",
+    lowerDetectionLimit = "numeric",
+    dispFitInfo = "environment",
+    dim_reduce_type = "character",
+    auxOrderingData = "environment",
+    auxClusteringData = "environment"
+  ),
+  prototype = prototype(new("VersionedBiobase",
+    versions = c(classVersion("ExpressionSet"), CellDataSet = "1.2.0")
+  ))
 )
-

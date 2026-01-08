@@ -4,19 +4,33 @@
 \alias{clusterCells}
 \title{Cluster cells into a specified number of groups based on .}
 \usage{
-clusterCells(cds, skip_rho_sigma = F, num_clusters = NULL,
-  inspect_rho_sigma = F, rho_threshold = NULL, delta_threshold = NULL,
-  peaks = NULL, gaussian = T, cell_type_hierarchy = NULL,
-  frequency_thresh = NULL, enrichment_thresh = NULL,
-  clustering_genes = NULL, k = 50, louvain_iter = 1, weight = FALSE,
-  method = c("densityPeak", "louvain", "DDRTree"), verbose = F, ...)
+clusterCells(
+  cds,
+  skip_rho_sigma = F,
+  num_clusters = NULL,
+  inspect_rho_sigma = F,
+  rho_threshold = NULL,
+  delta_threshold = NULL,
+  peaks = NULL,
+  gaussian = T,
+  cell_type_hierarchy = NULL,
+  frequency_thresh = NULL,
+  enrichment_thresh = NULL,
+  clustering_genes = NULL,
+  k = 50,
+  louvain_iter = 1,
+  weight = FALSE,
+  method = c("densityPeak", "louvain", "DDRTree"),
+  verbose = F,
+  ...
+)
 }
 \arguments{
 \item{cds}{the CellDataSet upon which to perform this operation}
 
 \item{skip_rho_sigma}{A logic flag to determine whether or not you want to skip the calculation of rho / sigma}
 
-\item{num_clusters}{Number of clusters. The algorithm use 0.5 of the rho as the threshold of rho and the delta 
+\item{num_clusters}{Number of clusters. The algorithm use 0.5 of the rho as the threshold of rho and the delta
 corresponding to the number_clusters sample with the highest delta as the density peaks and for assigning clusters}
 
 \item{inspect_rho_sigma}{A logical flag to determine whether or not you want to interactively select the rho and sigma for assigning up clusters}
@@ -57,17 +71,17 @@ an updated CellDataSet object, in which phenoData contains values for Cluster fo
 Unsupervised clustering of cells is a common step in many single-cell expression
 workflows. In an experiment containing a mixture of cell types, each cluster might
 correspond to a different cell type. This method takes a CellDataSet as input
-along with a requested number of clusters, clusters them with an unsupervised 
-algorithm (by default, density peak clustering), and then returns the CellDataSet with the 
-cluster assignments stored in the pData table. When number of clusters is set 
-to NULL (num_clusters = NULL), the decision plot as introduced in the reference 
-will be plotted and the users are required to check the decision plot to select 
-the rho and delta to determine the number of clusters to cluster. When the dataset 
-is big, for example > 50 k, we recommend the user to use the Louvain clustering 
-algorithm which is inspired from phenograph paper. Note Louvain doesn't support the 
-num_cluster argument but the k (number of k-nearest neighbors) is relevant to the final 
+along with a requested number of clusters, clusters them with an unsupervised
+algorithm (by default, density peak clustering), and then returns the CellDataSet with the
+cluster assignments stored in the pData table. When number of clusters is set
+to NULL (num_clusters = NULL), the decision plot as introduced in the reference
+will be plotted and the users are required to check the decision plot to select
+the rho and delta to determine the number of clusters to cluster. When the dataset
+is big, for example > 50 k, we recommend the user to use the Louvain clustering
+algorithm which is inspired from phenograph paper. Note Louvain doesn't support the
+num_cluster argument but the k (number of k-nearest neighbors) is relevant to the final
 clustering number. The implementation of Louvain clustering is based on the Rphenograph
-package but updated based on our requirement (for example, changed the jaccard_coeff 
+package but updated based on our requirement (for example, changed the jaccard_coeff
 function as well as adding louvain_iter argument, etc.)
 }
 \references{

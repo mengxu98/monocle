@@ -4,10 +4,21 @@
 \alias{calABCs}
 \title{Compute the area between curves (ABC) for branch-dependent genes}
 \usage{
-calABCs(cds, trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
-  branch_point = 1, trajectory_states = NULL, relative_expr = TRUE,
-  stretch = TRUE, cores = 1, verbose = F, min_expr = 0.5,
-  integer_expression = FALSE, num = 5000, branch_labels = NULL, ...)
+calABCs(
+  cds,
+  trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
+  branch_point = 1,
+  trajectory_states = NULL,
+  relative_expr = TRUE,
+  stretch = TRUE,
+  cores = 1,
+  verbose = F,
+  min_expr = 0.5,
+  integer_expression = FALSE,
+  num = 5000,
+  branch_labels = NULL,
+  ...
+)
 }
 \arguments{
 \item{cds}{a CellDataSet object upon which to perform this operation}
@@ -40,8 +51,8 @@ calABCs(cds, trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
 a data frame containing the ABCs (Area under curves) score as the first column and other meta information from fData
 }
 \description{
-This function is used to calculate the ABC score based on the the nature spline curves fitted for each branch. ABC score is used to 
-quantify the total magnitude of divergence between two branchs. By default, the ABC score is the area between two fitted spline curves. 
+This function is used to calculate the ABC score based on the the nature spline curves fitted for each branch. ABC score is used to
+quantify the total magnitude of divergence between two branchs. By default, the ABC score is the area between two fitted spline curves.
 The ABC score can be used to rank gene divergence. When coupled with p-val calculated from the branchTest, it can be used to identify
 potential major regulators for branch bifurcation.
 }

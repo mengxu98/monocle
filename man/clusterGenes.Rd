@@ -4,11 +4,17 @@
 \alias{clusterGenes}
 \title{Clusters genes by pseudotime trend.}
 \usage{
-clusterGenes(expr_matrix, k, method = function(x) {     as.dist((1 -
-  cor(Matrix::t(x)))/2) }, ...)
+clusterGenes(
+  expr_matrix,
+  k,
+  method = function(x) {
+     as.dist((1 - cor(Matrix::t(x)))/2)
+ },
+  ...
+)
 }
 \arguments{
-\item{expr_matrix}{A matrix of expression values to cluster together. Rows 
+\item{expr_matrix}{A matrix of expression values to cluster together. Rows
 are genes, columns are cells.}
 
 \item{k}{How many clusters to create}
@@ -21,15 +27,16 @@ are genes, columns are cells.}
 a pam cluster object
 }
 \description{
-This function takes a matrix of expression values and performs k-means 
+This function takes a matrix of expression values and performs k-means
 clustering on the genes.
 }
 \examples{
 \dontrun{
-full_model_fits <- fitModel(HSMM[sample(nrow(fData(HSMM_filtered)), 100),],  
-   modelFormulaStr="~sm.ns(Pseudotime)")
+full_model_fits <- fitModel(HSMM[sample(nrow(fData(HSMM_filtered)), 100), ],
+  modelFormulaStr = "~sm.ns(Pseudotime)"
+)
 expression_curve_matrix <- responseMatrix(full_model_fits)
-clusters <- clusterGenes(expression_curve_matrix, k=4)
-plot_clusters(HSMM_filtered[ordering_genes,], clusters)
+clusters <- clusterGenes(expression_curve_matrix, k = 4)
+plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 }
 }

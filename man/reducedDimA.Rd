@@ -10,11 +10,11 @@ reducedDimA(cds)
 \item{cds}{A CellDataSet object.}
 }
 \value{
-A matrix that when multiplied by a reduced-dimension set of coordinates for the CellDataSet, 
+A matrix that when multiplied by a reduced-dimension set of coordinates for the CellDataSet,
 recovers a matrix in the full (whitened) space
 }
 \description{
-Retrieves the weights that transform the cells' coordinates in the reduced 
+Retrieves the weights that transform the cells' coordinates in the reduced
 dimension space back to the full (whitened) space.
 }
 \examples{

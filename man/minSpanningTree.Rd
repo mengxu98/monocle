@@ -14,7 +14,7 @@ An igraph object representing the CellDataSet's minimum spanning tree.
 }
 \description{
 Retrieves the minimum spanning tree (MST) that Monocle constructs during orderCells().
-This MST is mostly used in plot_spanning_tree to help assess the accuracy 
+This MST is mostly used in plot_spanning_tree to help assess the accuracy
 of Monocle\'s ordering.
 }
 \examples{

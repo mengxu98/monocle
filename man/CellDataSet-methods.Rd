@@ -6,11 +6,8 @@
 \alias{sizeFactors,CellDataSet-method}
 \alias{CellDataSet,ANY,ANY-method}
 \alias{sizeFactors<-,CellDataSet,numeric-method}
-\alias{CellDataSet,ANY,ANY-method}
 \alias{estimateSizeFactors,CellDataSet-method}
-\alias{CellDataSet,ANY,ANY-method}
 \alias{estimateDispersions,CellDataSet-method}
-\alias{CellDataSet,ANY,ANY-method}
 \title{Methods for the CellDataSet class}
 \usage{
 \S4method{sizeFactors}{CellDataSet}(object)
@@ -19,9 +16,15 @@
 
 \S4method{estimateSizeFactors}{CellDataSet}(object, locfunc = median, ...)
 
-\S4method{estimateDispersions}{CellDataSet}(object, modelFormulaStr = "~ 1",
-  relative_expr = TRUE, min_cells_detected = 1, remove_outliers = TRUE,
-  cores = 1, ...)
+\S4method{estimateDispersions}{CellDataSet}(
+  object,
+  modelFormulaStr = "~ 1",
+  relative_expr = TRUE,
+  min_cells_detected = 1,
+  remove_outliers = TRUE,
+  cores = 1,
+  ...
+)
 }
 \arguments{
 \item{object}{The CellDataSet object}
@@ -32,7 +35,7 @@
 
 \item{...}{Additional arguments to be passed to estimateSizeFactorsForMatrix}
 
-\item{modelFormulaStr}{A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion. 
+\item{modelFormulaStr}{A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
 The default groups all cells together.}
 
 \item{relative_expr}{Whether to transform expression into relative values}

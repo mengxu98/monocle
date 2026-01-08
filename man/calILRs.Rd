@@ -4,12 +4,25 @@
 \alias{calILRs}
 \title{Calculate the Instantaneous Log Ratio between two branches}
 \usage{
-calILRs(cds, trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
-  branch_point = 1, trajectory_states = NULL, relative_expr = TRUE,
-  stretch = TRUE, cores = 1, ILRs_limit = 3, label_by_short_name = TRUE,
-  useVST = FALSE, round_exprs = FALSE, output_type = "all",
-  branch_labels = NULL, file = NULL, return_all = F, verbose = FALSE,
-  ...)
+calILRs(
+  cds,
+  trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
+  branch_point = 1,
+  trajectory_states = NULL,
+  relative_expr = TRUE,
+  stretch = TRUE,
+  cores = 1,
+  ILRs_limit = 3,
+  label_by_short_name = TRUE,
+  useVST = FALSE,
+  round_exprs = FALSE,
+  output_type = "all",
+  branch_labels = NULL,
+  file = NULL,
+  return_all = F,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment}
@@ -41,7 +54,7 @@ When VST is used, the difference between two branchs are used instead of the log
 
 \item{file}{the name for storing the data. Since the calculation of the Instant Log Ratio is very time consuming, so by default the result will be stored}
 
-\item{return_all}{A logic flag to determine whether or not all the results from the analysis should be returned, this includes 
+\item{return_all}{A logic flag to determine whether or not all the results from the analysis should be returned, this includes
 a dataframe for the log fold change, normalized log fold change, raw divergence, normalized divergence, fitting curves for each branch}
 
 \item{verbose}{Whether or not detailed running information should be returned}
@@ -52,9 +65,9 @@ a dataframe for the log fold change, normalized log fold change, raw divergence,
 a ggplot2 plot object
 }
 \description{
-This function is used to calculate the Instant Log Ratio between two branches which can be used to prepare the heatmap demonstrating the branch gene expression divergence hirearchy. If "stretch" is specifified, each  
-branch will be firstly stretched into maturation level from 0-100. Since the results when we use "stretching" are always better and 
-IRLs for non-stretched spline curves are often mismatched, we may only turn down "non-stretch" functionality in future versions. Then, we fit two separate nature spline curves for each 
-individual linages. The log-ratios of the value on each spline curve corresponding to each branch are calculated, which can be  
+This function is used to calculate the Instant Log Ratio between two branches which can be used to prepare the heatmap demonstrating the branch gene expression divergence hirearchy. If "stretch" is specifified, each
+branch will be firstly stretched into maturation level from 0-100. Since the results when we use "stretching" are always better and
+IRLs for non-stretched spline curves are often mismatched, we may only turn down "non-stretch" functionality in future versions. Then, we fit two separate nature spline curves for each
+individual linages. The log-ratios of the value on each spline curve corresponding to each branch are calculated, which can be
 used as a measure for the magnitude of divergence between two branching branchs.
 }

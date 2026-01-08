@@ -13,7 +13,7 @@ Classifies cells according to a hierarchy of types via user-defined
 gating functions.
 }
 \section{Slots}{
- 
+
  \describe{
    \item{\code{classificationTree}:}{Object of class \code{"igraph"}}
  }

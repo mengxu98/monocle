@@ -4,10 +4,20 @@
 \alias{plot_genes_violin}
 \title{Plots expression for one or more genes as a violin plot}
 \usage{
-plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
-  cell_size = 0.75, nrow = NULL, ncol = 1, panel_order = NULL,
-  color_by = NULL, plot_trend = FALSE, label_by_short_name = TRUE,
-  relative_expr = TRUE, log_scale = TRUE)
+plot_genes_violin(
+  cds_subset,
+  grouping = "State",
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = NULL,
+  plot_trend = FALSE,
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  log_scale = TRUE
+)
 }
 \arguments{
 \item{cds_subset}{CellDataSet for the experiment}
@@ -46,7 +56,7 @@ each group of cells.
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
-plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
+my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))), ]
+plot_genes_violin(my_genes, grouping = "Hours", ncol = 2, min_expr = 0.1)
 }
 }

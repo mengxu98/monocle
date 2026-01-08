@@ -3,27 +3,26 @@
 #' @docType methods
 #' @rdname CellDataSet-methods
 #' @param object The CellDataSet object
-setValidity( "CellDataSet", function( object ) {
-#   if( any( counts(object) < 0 ) )
-#     return( "the count data contains negative values" )
+setValidity("CellDataSet", function(object) {
   TRUE
-} )
+})
 
 #' @rdname CellDataSet-methods
 #' @aliases CellDataSet,ANY,ANY-method
-setMethod("sizeFactors", signature(object="CellDataSet"), function(object) {
+setMethod("sizeFactors", signature(object = "CellDataSet"), function(object) {
   sf <- pData(object)$Size_Factor
-  names( sf ) <- colnames( exprs(object) )
-  sf})   
+  names(sf) <- colnames(exprs(object))
+  sf
+})
 
 #' @rdname CellDataSet-methods
 #' @aliases CellDataSet,ANY,ANY-method
 #' @param value A vector of size factors, with length equal to the cells in object
-setReplaceMethod("sizeFactors", signature(object="CellDataSet", value="numeric"), setSizeFactors <- function(object, value) {
+setReplaceMethod("sizeFactors", signature(object = "CellDataSet", value = "numeric"), setSizeFactors <- function(object, value) {
   pData(object)$Size_Factor <- value
-  validObject( object )
+  validObject(object)
   object
-})   
+})
 
 
 #' @rdname CellDataSet-methods
@@ -32,17 +31,18 @@ setReplaceMethod("sizeFactors", signature(object="CellDataSet", value="numeric")
 #' @importFrom BiocGenerics sizeFactors<-
 #' @importFrom BiocGenerics estimateSizeFactors
 #' @aliases CellDataSet,ANY,ANY-method
-setMethod("estimateSizeFactors", 
-          signature(object="CellDataSet"),
-function( object, locfunc=median, ... ) 
-{
-  sizeFactors(object) <- estimateSizeFactorsForMatrix(exprs(object), locfunc=locfunc, ...)
-  object
-})
+setMethod(
+  "estimateSizeFactors",
+  signature(object = "CellDataSet"),
+  function(object, locfunc = median, ...) {
+    sizeFactors(object) <- estimateSizeFactorsForMatrix(exprs(object), locfunc = locfunc, ...)
+    object
+  }
+)
 
 #' @rdname CellDataSet-methods
-#' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion. 
-#' The default groups all cells together. 
+#' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
+#' The default groups all cells together.
 #' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
 #' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
@@ -50,83 +50,77 @@ function( object, locfunc=median, ... )
 #' @aliases CellDataSet,ANY,ANY-method
 #' @importFrom BiocGenerics sizeFactors
 #' @importFrom BiocGenerics estimateDispersions
-setMethod("estimateDispersions", 
-          signature(object="CellDataSet"), 
-function(object, modelFormulaStr="~ 1", relative_expr=TRUE, min_cells_detected=1, remove_outliers=TRUE, cores=1,...)
-{
-  dispModelName="blind"
-  stopifnot( is( object, "CellDataSet" ) )
-  
-  if(!(identical("negbinomial.size", object@expressionFamily@vfamily) || identical("negbinomial", object@expressionFamily@vfamily))){
-    stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
+setMethod(
+  "estimateDispersions",
+  signature(object = "CellDataSet"),
+  function(object, modelFormulaStr = "~ 1", relative_expr = TRUE, min_cells_detected = 1, remove_outliers = TRUE, cores = 1, ...) {
+    dispModelName <- "blind"
+    stopifnot(is(object, "CellDataSet"))
+
+    if (!(identical("negbinomial.size", object@expressionFamily@vfamily) || identical("negbinomial", object@expressionFamily@vfamily))) {
+      stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
+    }
+
+    if (any(is.na(sizeFactors(object)))) {
+      stop("NAs found in size factors. Have you called 'estimateSizeFactors'?")
+    }
+
+    if (length(list(...)) != 0) {
+      warning("in estimateDispersions: Ignoring extra argument(s).")
+    }
+
+    object@dispFitInfo <- new.env(hash = TRUE)
+
+
+    dfi <- estimateDispersionsForCellDataSet(
+      object,
+      modelFormulaStr,
+      relative_expr,
+      min_cells_detected,
+      remove_outliers,
+      cores
+    )
+    object@dispFitInfo[[dispModelName]] <- dfi
+
+    validObject(object)
+    object
   }
+)
 
-  if( any( is.na( sizeFactors(object) ) ) )
-    stop( "NAs found in size factors. Have you called 'estimateSizeFactors'?" )
-  
-  if( length(list(...)) != 0 )
-    warning( "in estimateDispersions: Ignoring extra argument(s)." )
-  
-  # Remove results from previous fits
-  object@dispFitInfo = new.env( hash=TRUE )
-  
-  # if (isSparseMatrix(exprs(object))){
-  #   sp_mat <- asSlamMatrix(exprs(object))
-  #   nzGenes <- rowapply_simple_triplet_matrix(sp_mat, function(x) { sum(round(as.vector(x)) > object@lowerDetectionLimit) })
-  # }else{
-  #   nzGenes <- apply(exprs(object), 1, function(x) { sum(round(as.vector(x)) > object@lowerDetectionLimit) 
-  #   
-  # }
-
-  dfi <- estimateDispersionsForCellDataSet(object, 
-                                           modelFormulaStr, 
-                                           relative_expr, 
-                                           min_cells_detected,
-                                           remove_outliers,
-                                           cores)
-  object@dispFitInfo[[dispModelName]] <- dfi
-  
-  validObject( object )
-  object
-})
-
-###################
 
 #' @importFrom BiocGenerics sizeFactors
-checkSizeFactors <- function(cds)
-{
-  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))
-  {
-    if (is.null(sizeFactors(cds))){
+checkSizeFactors <- function(cds) {
+  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+    if (is.null(sizeFactors(cds))) {
       stop("Error: you must call estimateSizeFactors() before calling this function.")
     }
-    if (sum(is.na(sizeFactors(cds))) > 0){
+    if (sum(is.na(sizeFactors(cds))) > 0) {
       stop("Error: one or more cells has a size factor of NA.")
     }
   }
 }
 
-#' Retrieves the coordinates of each cell in the reduced-dimensionality space generated by calls to 
+#' Retrieves the coordinates of each cell in the reduced-dimensionality space generated by calls to
 #' reduceDimension.
 #'
-#' Reducing the dimensionality of the expression data is a core step in the Monocle 
+#' Reducing the dimensionality of the expression data is a core step in the Monocle
 #' workflow. After you call reduceDimension(), this function will return the new
-#' coordinates of your cells in the reduced space. 
+#' coordinates of your cells in the reduced space.
 #' @param cds A CellDataSet object.
-#' @return A matrix, where rows are cell coordinates and columns correspond to dimensions of the 
+#' @return A matrix, where rows are cell coordinates and columns correspond to dimensions of the
 #' reduced space.
 #' @export
 #' @examples
 #' \dontrun{
 #' S <- reducedDimS(HSMM)
 #' }
-reducedDimS <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+reducedDimS <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimS
-}   
+}
 
-#' Set embedding coordinates of each cell in a CellDataSet.  
-#' 
+#' Set embedding coordinates of each cell in a CellDataSet.
+#'
 #' This function sets the coordinates of each cell in a new
 #' (reduced-dimensionality) space. Not intended to be called directly.
 #'
@@ -137,16 +131,16 @@ reducedDimS <- function( cds ) {
 #' \dontrun{
 #' cds <- reducedDimS(S)
 #' }
-`reducedDimS<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`reducedDimS<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimS <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
+}
 
-#' Get the whitened expression values for a CellDataSet. 
-#' 
-#' Retrieves the expression values for each cell (as a matrix) after whitening 
+#' Get the whitened expression values for a CellDataSet.
+#'
+#' Retrieves the expression values for each cell (as a matrix) after whitening
 #' during dimensionality reduction.
 #'
 #' @param cds A CellDataSet object.
@@ -156,10 +150,10 @@ reducedDimS <- function( cds ) {
 #' \dontrun{
 #' W <- reducedDimW(HSMM)
 #' }
-reducedDimW <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+reducedDimW <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimW
-}   
+}
 
 #' @title Sets the the whitening matrix during independent component analysis.
 #'
@@ -173,15 +167,15 @@ reducedDimW <- function( cds ) {
 #' \dontrun{
 #' cds <- reducedDimK(K)
 #' }
-`reducedDimK<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`reducedDimK<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimK <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
+}
 
 #' Retrieves the the whitening matrix during independent component analysis.
-#' 
+#'
 #' @param cds A CellDataSet object.
 #' @return A matrix, where each row is a set of whitened expression values for a feature and columns are cells.
 #' @docType methods
@@ -190,10 +184,10 @@ reducedDimW <- function( cds ) {
 #' \dontrun{
 #' K <- reducedDimW(HSMM)
 #' }
-reducedDimK <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+reducedDimK <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimK
-}   
+}
 
 #' Sets the whitened expression values for each cell prior to independent component analysis. Not intended to be called directly.
 #'
@@ -204,34 +198,34 @@ reducedDimK <- function( cds ) {
 #' \dontrun{
 #' #' cds <- reducedDimA(A)
 #' }
-`reducedDimW<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`reducedDimW<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimW <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
+}
 
 #' Get the weights needed to lift cells back to high dimensional expression space.
-#' 
-#' Retrieves the weights that transform the cells' coordinates in the reduced 
+#'
+#' Retrieves the weights that transform the cells' coordinates in the reduced
 #' dimension space back to the full (whitened) space.
 #'
 #' @param cds A CellDataSet object.
-#' @return A matrix that when multiplied by a reduced-dimension set of coordinates for the CellDataSet, 
+#' @return A matrix that when multiplied by a reduced-dimension set of coordinates for the CellDataSet,
 #' recovers a matrix in the full (whitened) space
 #' @export
 #' @examples
 #' \dontrun{
 #' A <- reducedDimA(HSMM)
 #' }
-reducedDimA <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+reducedDimA <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimA
-}   
+}
 
 #' Get the weights needed to lift cells back to high dimensional expression space.
-#' 
-#' Sets the weights transform the cells' coordinates in the reduced dimension 
+#'
+#' Sets the weights transform the cells' coordinates in the reduced dimension
 #' space back to the full (whitened) space.
 #'
 #' @param cds A CellDataSet object.
@@ -242,17 +236,17 @@ reducedDimA <- function( cds ) {
 #' \dontrun{
 #' cds <- reducedDimA(A)
 #' }
-`reducedDimA<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`reducedDimA<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@reducedDimA <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
+}
 
 #' Retrieves the minimum spanning tree generated by Monocle during cell ordering.
 #'
 #' Retrieves the minimum spanning tree (MST) that Monocle constructs during orderCells().
-#' This MST is mostly used in plot_spanning_tree to help assess the accuracy 
+#' This MST is mostly used in plot_spanning_tree to help assess the accuracy
 #' of Monocle\'s ordering.
 #' @param cds expression data matrix for an experiment
 #' @return An igraph object representing the CellDataSet's minimum spanning tree.
@@ -261,13 +255,13 @@ reducedDimA <- function( cds ) {
 #' \dontrun{
 #' T <- minSpanningTree(HSMM)
 #' }
-minSpanningTree <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+minSpanningTree <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@minSpanningTree
-}   
+}
 
 #' Set the minimum spanning tree generated by Monocle during cell ordering.
-#' 
+#'
 #' Sets the minimum spanning tree used by Monocle during cell ordering. Not intended to be called directly.
 #'
 #' @param cds A CellDataSet object.
@@ -278,15 +272,15 @@ minSpanningTree <- function( cds ) {
 #' \dontrun{
 #' cds <- minSpanningTree(T)
 #' }
-`minSpanningTree<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`minSpanningTree<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@minSpanningTree <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
+}
 
 #' Get the matrix of pairwise distances between cells
-#' 
+#'
 #' Retrieves a matrix capturing distances between each cell used during cell ordering.
 #'
 #' @param cds expression data matrix for an experiment
@@ -297,10 +291,10 @@ minSpanningTree <- function( cds ) {
 #' \dontrun{
 #' D <- cellPairwiseDistances(HSMM)
 #' }
-cellPairwiseDistances <- function( cds ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+cellPairwiseDistances <- function(cds) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@cellPairwiseDistances
-}   
+}
 
 #' Sets the matrix containing distances between each pair of cells used by Monocle during cell ordering. Not intended to be called directly.
 #'
@@ -312,11 +306,9 @@ cellPairwiseDistances <- function( cds ) {
 #' \dontrun{
 #' cds <- cellPairwiseDistances(D)
 #' }
-`cellPairwiseDistances<-` <- function( cds, value ) {
-  stopifnot( is( cds, "CellDataSet" ) )
+`cellPairwiseDistances<-` <- function(cds, value) {
+  stopifnot(is(cds, "CellDataSet"))
   cds@cellPairwiseDistances <- value
-  validObject( cds )
+  validObject(cds)
   cds
-}   
-
-
+}

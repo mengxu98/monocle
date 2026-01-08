@@ -4,8 +4,16 @@
 \alias{plot_clusters}
 \title{Plots kinetic clusters of genes.}
 \usage{
-plot_clusters(cds, clustering, drawSummary = TRUE, sumFun = mean_cl_boot,
-  ncol = NULL, nrow = NULL, row_samples = NULL, callout_ids = NULL)
+plot_clusters(
+  cds,
+  clustering,
+  drawSummary = TRUE,
+  sumFun = mean_cl_boot,
+  ncol = NULL,
+  nrow = NULL,
+  row_samples = NULL,
+  callout_ids = NULL
+)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment}
@@ -35,10 +43,11 @@ relative to overall trend lines.
 }
 \examples{
 \dontrun{
-full_model_fits <- fitModel(HSMM_filtered[sample(nrow(fData(HSMM_filtered)), 100),],  
-   modelFormulaStr="~VGAM::bs(Pseudotime)")
+full_model_fits <- fitModel(HSMM_filtered[sample(nrow(fData(HSMM_filtered)), 100), ],
+  modelFormulaStr = "~VGAM::bs(Pseudotime)"
+)
 expression_curve_matrix <- responseMatrix(full_model_fits)
-clusters <- clusterGenes(expression_curve_matrix, k=4)
-plot_clusters(HSMM_filtered[ordering_genes,], clusters)
+clusters <- clusterGenes(expression_curve_matrix, k = 4)
+plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 }
 }

@@ -4,12 +4,22 @@
 \alias{relative2abs}
 \title{Transform relative expression values into absolute transcript counts.}
 \usage{
-relative2abs(relative_cds, t_estimate = estimate_t(exprs(relative_cds)),
-  modelFormulaStr = "~1", ERCC_controls = NULL, ERCC_annotation = NULL,
-  volume = 10, dilution = 40000, mixture_type = 1,
-  detection_threshold = 800, expected_capture_rate = 0.25,
-  verbose = FALSE, return_all = FALSE, method = c("num_genes",
-  "tpm_fraction"), cores = 1)
+relative2abs(
+  relative_cds,
+  t_estimate = estimate_t(exprs(relative_cds)),
+  modelFormulaStr = "~1",
+  ERCC_controls = NULL,
+  ERCC_annotation = NULL,
+  volume = 10,
+  dilution = 40000,
+  mixture_type = 1,
+  detection_threshold = 800,
+  expected_capture_rate = 0.25,
+  verbose = FALSE,
+  return_all = FALSE,
+  method = c("num_genes", "tpm_fraction"),
+  cores = 1
+)
 }
 \arguments{
 \item{relative_cds}{the cds object of relative expression values for single cell RNA-seq with each row and column representing genes/isoforms and cells. Row and column names should be included}
@@ -52,17 +62,18 @@ as an expressionFamily. These results are often far more accurate than using tob
 \details{
 Transform a relative expression matrix to absolute transcript matrix based on the inferred linear regression parameters from most abundant isoform relative expression value.
 This function takes a relative expression matrix and a vector of estimated most abundant expression value from the isoform-level matrix and transform it into absolute transcript number.
-It is based on the observation that the recovery efficient of the single-cell RNA-seq is relative low and that most expressed isoforms of gene in a single cell therefore only sequenced one copy so that the 
-most abundant isoform log10-FPKM (t^*) will corresponding to 1 copy transcript. It is also based on the fact that the spikein regression parameters k/b for each cell will fall on a line because of the 
+It is based on the observation that the recovery efficient of the single-cell RNA-seq is relative low and that most expressed isoforms of gene in a single cell therefore only sequenced one copy so that the
+most abundant isoform log10-FPKM (t^*) will corresponding to 1 copy transcript. It is also based on the fact that the spikein regression parameters k/b for each cell will fall on a line because of the
 intrinsic properties of spikein experiments. We also assume that if we perform the same spikein experiments as Treutlein et al. did, the regression parameters should also fall on a line in the same way. The
 function takes the the vector t^* and the detection limit as input, then it uses the t^* and the m/c value corresponding to the detection limit to calculate two parameters vectors k^* and b^* (corresponding to each cell)
-which correspond to the slope and intercept for the linear conversion function between log10 FPKM and log10 transcript counts. The function will then apply a linear transformation 
+which correspond to the slope and intercept for the linear conversion function between log10 FPKM and log10 transcript counts. The function will then apply a linear transformation
 to convert the FPKM to estimated absolute transcript counts based on the the k^* and b^*. The default m/c values used in the algoritm are 3.652201, 2.263576, respectively.
 }
 \examples{
 \dontrun{
 HSMM_relative_expr_matrix <- exprs(HSMM)
-HSMM_abs_matrix <- relative2abs(HSMM_relative_expr_matrix, 
-   t_estimate = estimate_t(HSMM_relative_expr_matrix))
+HSMM_abs_matrix <- relative2abs(HSMM_relative_expr_matrix,
+  t_estimate = estimate_t(HSMM_relative_expr_matrix)
+)
 }
 }

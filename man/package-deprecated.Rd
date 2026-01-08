@@ -5,10 +5,21 @@
 \title{Plots the minimum spanning tree on cells.
 This function is deprecated.}
 \usage{
-plot_spanning_tree(cds, x = 1, y = 2, color_by = "State",
-  show_tree = TRUE, show_backbone = TRUE, backbone_color = "black",
-  markers = NULL, show_cell_names = FALSE, cell_size = 1.5,
-  cell_link_size = 0.75, cell_name_size = 2, show_branch_points = TRUE)
+plot_spanning_tree(
+  cds,
+  x = 1,
+  y = 2,
+  color_by = "State",
+  show_tree = TRUE,
+  show_backbone = TRUE,
+  backbone_color = "black",
+  markers = NULL,
+  show_cell_names = FALSE,
+  cell_size = 1.5,
+  cell_link_size = 0.75,
+  cell_name_size = 2,
+  show_branch_points = TRUE
+)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment}
@@ -49,8 +60,8 @@ predicts their location based on their pseudotime value
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
 plot_cell_trajectory(HSMM)
-plot_cell_trajectory(HSMM, color_by="Pseudotime", show_backbone=FALSE)
-plot_cell_trajectory(HSMM, markers="MYH3")
+plot_cell_trajectory(HSMM, color_by = "Pseudotime", show_backbone = FALSE)
+plot_cell_trajectory(HSMM, markers = "MYH3")
 }
 }
 \seealso{

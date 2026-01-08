@@ -15,6 +15,6 @@ setOrderingFilter(cds, ordering_genes)
 an updated CellDataSet object
 }
 \description{
-The function marks genes that will be used for clustering in subsequent calls to clusterCells. 
+The function marks genes that will be used for clustering in subsequent calls to clusterCells.
 The list of selected genes can be altered at any time.
 }

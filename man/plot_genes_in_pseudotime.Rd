@@ -4,10 +4,20 @@
 \alias{plot_genes_in_pseudotime}
 \title{Plots expression for one or more genes as a function of pseudotime}
 \usage{
-plot_genes_in_pseudotime(cds_subset, min_expr = NULL, cell_size = 0.75,
-  nrow = NULL, ncol = 1, panel_order = NULL, color_by = "State",
-  trend_formula = "~ sm.ns(Pseudotime, df=3)", label_by_short_name = TRUE,
-  relative_expr = TRUE, vertical_jitter = NULL, horizontal_jitter = NULL)
+plot_genes_in_pseudotime(
+  cds_subset,
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = "State",
+  trend_formula = "~ sm.ns(Pseudotime, df=3)",
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  vertical_jitter = NULL,
+  horizontal_jitter = NULL
+)
 }
 \arguments{
 \item{cds_subset}{CellDataSet for the experiment}
@@ -46,8 +56,8 @@ and it does not need to be flipped using the "reverse" flag in orderCells
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-my_genes <- row.names(subset(fData(HSMM), gene_short_name \%in\% c("CDK1", "MEF2C", "MYH3"))) 
-cds_subset <- HSMM[my_genes,]
-plot_genes_in_pseudotime(cds_subset, color_by="Time")
+my_genes <- row.names(subset(fData(HSMM), gene_short_name \%in\% c("CDK1", "MEF2C", "MYH3")))
+cds_subset <- HSMM[my_genes, ]
+plot_genes_in_pseudotime(cds_subset, color_by = "Time")
 }
 }

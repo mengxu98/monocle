@@ -16,12 +16,12 @@ an updated CellDataSet object
 }
 \description{
 Sets the global expression detection threshold to be used with this CellDataSet.
-Counts how many cells each feature in a CellDataSet object that are detectably expressed 
-above a minimum threshold. Also counts the number of genes above this threshold are 
+Counts how many cells each feature in a CellDataSet object that are detectably expressed
+above a minimum threshold. Also counts the number of genes above this threshold are
 detectable in each cell.
 }
 \examples{
 \dontrun{
-HSMM <- detectGenes(HSMM, min_expr=0.1)
+HSMM <- detectGenes(HSMM, min_expr = 0.1)
 }
 }

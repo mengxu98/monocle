@@ -9,12 +9,13 @@ data(HSMM_sample_sheet)
 pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
 fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
 HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix),
-                       phenoData = pd,
-                       featureData = fd,
-                       lowerDetectionLimit = 0.1,
-                       expressionFamily = tobit(Lower = 0.1))
+  phenoData = pd,
+  featureData = fd,
+  lowerDetectionLimit = 0.1,
+  expressionFamily = tobit(Lower = 0.1)
+)
 
-#write test code for this: 
+# write test code for this:
 test_that("relative2abs works with valid input and return_all = FALSE", {
   expect_error(relative2abs(HSMM, method = "num_genes", verbose = TRUE), NA)
 })
@@ -49,4 +50,3 @@ test_that("throws error if ERCC_annotation is null and ERCC_controls is not", {
 
 ## TO DO:
 ## ADD TEST WHERE ERCC_ANNOTATION AND ERCC_CONTROLS ARE NOT NULL
-

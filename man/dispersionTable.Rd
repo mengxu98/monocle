@@ -10,12 +10,12 @@ dispersionTable(cds)
 \item{cds}{The CellDataSet from which to extract a dispersion table.}
 }
 \value{
-A data frame containing the empirical mean expression, 
+A data frame containing the empirical mean expression,
 empirical dispersion, and the value estimated by the dispersion model.
 }
 \description{
 Calling estimateDispersions computes a smooth function describing how variance
-in each gene's expression across cells varies according to the mean. This 
+in each gene's expression across cells varies according to the mean. This
 function only works for CellDataSet objects containing count-based expression
 data, either transcripts or reads.
 }

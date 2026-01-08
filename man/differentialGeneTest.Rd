@@ -4,9 +4,14 @@
 \alias{differentialGeneTest}
 \title{Test genes for differential expression}
 \usage{
-differentialGeneTest(cds, fullModelFormulaStr = "~sm.ns(Pseudotime, df=3)",
-  reducedModelFormulaStr = "~1", relative_expr = TRUE, cores = 1,
-  verbose = FALSE)
+differentialGeneTest(
+  cds,
+  fullModelFormulaStr = "~sm.ns(Pseudotime, df=3)",
+  reducedModelFormulaStr = "~1",
+  relative_expr = TRUE,
+  cores = 1,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cds}{a CellDataSet object upon which to perform this operation}
@@ -25,9 +30,9 @@ differentialGeneTest(cds, fullModelFormulaStr = "~sm.ns(Pseudotime, df=3)",
 a data frame containing the p values and q-values from the likelihood ratio tests on the parallel arrays of models.
 }
 \description{
-Tests each gene for differential expression as a function of pseudotime 
+Tests each gene for differential expression as a function of pseudotime
 or according to other covariates as specified. \code{differentialGeneTest} is
-Monocle's main differential analysis routine. 
+Monocle's main differential analysis routine.
 It accepts a CellDataSet and two model formulae as input, which specify generalized
 lineage models as implemented by the \code{VGAM} package.
 }

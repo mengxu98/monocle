@@ -4,13 +4,25 @@
 \alias{plot_genes_branched_pseudotime}
 \title{Plot the branch genes in pseduotime with separate branch curves.}
 \usage{
-plot_genes_branched_pseudotime(cds, branch_states = NULL, branch_point = 1,
-  branch_labels = NULL, method = "fitting", min_expr = NULL,
-  cell_size = 0.75, nrow = NULL, ncol = 1, panel_order = NULL,
-  color_by = "State", expression_curve_linetype_by = "Branch",
+plot_genes_branched_pseudotime(
+  cds,
+  branch_states = NULL,
+  branch_point = 1,
+  branch_labels = NULL,
+  method = "fitting",
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = "State",
+  expression_curve_linetype_by = "Branch",
   trend_formula = "~ sm.ns(Pseudotime, df=3) * Branch",
-  reducedModelFormulaStr = NULL, label_by_short_name = TRUE,
-  relative_expr = TRUE, ...)
+  reducedModelFormulaStr = NULL,
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  ...
+)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment}
@@ -51,12 +63,12 @@ plot_genes_branched_pseudotime(cds, branch_states = NULL, branch_point = 1,
 a ggplot2 plot object
 }
 \description{
-Works similarly to plot_genes_in_psuedotime esceptit shows 
+Works similarly to plot_genes_in_psuedotime esceptit shows
 one kinetic trend for each lineage.
 }
 \details{
 This plotting function is used to make the branching plots for a branch dependent gene goes through the progenitor state
-and bifurcating into two distinct branchs (Similar to the pitch-fork bifurcation in dynamic systems). In order to make the  
-bifurcation plot, we first duplicated the progenitor states and by default stretch each branch into maturation level 0-100.  
+and bifurcating into two distinct branchs (Similar to the pitch-fork bifurcation in dynamic systems). In order to make the
+bifurcation plot, we first duplicated the progenitor states and by default stretch each branch into maturation level 0-100.
 Then we fit two nature spline curves for each branchs using VGAM package.
 }

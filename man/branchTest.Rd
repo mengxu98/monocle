@@ -4,10 +4,18 @@
 \alias{branchTest}
 \title{Test for branch-dependent expression}
 \usage{
-branchTest(cds, fullModelFormulaStr = "~sm.ns(Pseudotime, df = 3)*Branch",
+branchTest(
+  cds,
+  fullModelFormulaStr = "~sm.ns(Pseudotime, df = 3)*Branch",
   reducedModelFormulaStr = "~sm.ns(Pseudotime, df = 3)",
-  branch_states = NULL, branch_point = 1, relative_expr = TRUE,
-  cores = 1, branch_labels = NULL, verbose = FALSE, ...)
+  branch_states = NULL,
+  branch_point = 1,
+  relative_expr = TRUE,
+  cores = 1,
+  branch_labels = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{cds}{a CellDataSet object upon which to perform this operation}
@@ -35,8 +43,8 @@ a data frame containing the p values and q-values from the likelihood ratio test
 }
 \description{
 Testing for branch-dependent expression with \code{\link{BEAM}()} first
-involves constructing a CellDataSet that assigns each cell to a branch, and 
-then performing a likelihood ratio test to see if the branch assignments 
+involves constructing a CellDataSet that assigns each cell to a branch, and
+then performing a likelihood ratio test to see if the branch assignments
 significantly improves the fit over a null model that does not split the cells.
 \code{branchTest()} implements these two steps.
 }

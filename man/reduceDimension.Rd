@@ -4,11 +4,19 @@
 \alias{reduceDimension}
 \title{Compute a projection of a CellDataSet object into a lower dimensional space}
 \usage{
-reduceDimension(cds, max_components = 2, reduction_method = c("DDRTree",
-  "ICA", "tSNE", "SimplePPT", "L1-graph", "SGL-tree"), norm_method = c("log",
-  "vstExprs", "none"), residualModelFormulaStr = NULL, pseudo_expr = 1,
-  relative_expr = TRUE, auto_param_selection = TRUE, verbose = FALSE,
-  scaling = TRUE, ...)
+reduceDimension(
+  cds,
+  max_components = 2,
+  reduction_method = c("DDRTree", "ICA", "tSNE", "SimplePPT", "L1-graph", "SGL-tree"),
+  norm_method = c("log", "vstExprs", "none"),
+  residualModelFormulaStr = NULL,
+  pseudo_expr = 1,
+  relative_expr = TRUE,
+  auto_param_selection = TRUE,
+  verbose = FALSE,
+  scaling = TRUE,
+  ...
+)
 }
 \arguments{
 \item{cds}{the CellDataSet upon which to perform this operation}
@@ -37,10 +45,10 @@ reduceDimension(cds, max_components = 2, reduction_method = c("DDRTree",
 an updated CellDataSet object
 }
 \description{
-Monocle aims to learn how cells transition through a biological program of 
-gene expression changes in an experiment. Each cell can be viewed as a point 
-in a high-dimensional space, where each dimension describes the expression of 
-a different gene in the genome. Identifying the program of gene expression 
+Monocle aims to learn how cells transition through a biological program of
+gene expression changes in an experiment. Each cell can be viewed as a point
+in a high-dimensional space, where each dimension describes the expression of
+a different gene in the genome. Identifying the program of gene expression
 changes is equivalent to learning a \emph{trajectory} that the cells follow
 through this space. However, the more dimensions there are in the analysis,
 the harder the trajectory is to learn. Fortunately, many genes typically
@@ -53,7 +61,7 @@ reduced space. You can also provide a model formula indicating some variables
 doesn't contribute to the trajectory.
 }
 \details{
-You can choose two different reduction algorithms: Independent Component 
+You can choose two different reduction algorithms: Independent Component
 Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
 The choice impacts numerous downstream analysis steps, including \code{\link{orderCells}}.
 Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
