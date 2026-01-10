@@ -9,8 +9,6 @@
 #' @param method The distance function to use during clustering
 #' @param ... Extra parameters to pass to pam() during clustering
 #' @return a pam cluster object
-#' @importFrom cluster pam
-#' @importFrom stats as.dist cor quantile
 #' @export
 #' @examples
 #' \dontrun{
@@ -21,9 +19,12 @@
 #' clusters <- clusterGenes(expression_curve_matrix, k = 4)
 #' plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 #' }
-clusterGenes <- function(expr_matrix, k, method = function(x) {
-                           as.dist((1 - cor(Matrix::t(x))) / 2)
-                         }, ...) {
+clusterGenes <- function(
+    expr_matrix,
+    k,
+    method = function(x) {
+      stats::as.dist((1 - stats::cor(Matrix::t(x))) / 2)
+    }, ...) {
   expr_matrix <- expr_matrix[rowSums(is.na(expr_matrix)) == 0, ]
   expr_matrix <- expr_matrix[is.nan(rowSums(expr_matrix)) == FALSE, ]
   expr_matrix[is.na(expr_matrix)] <- 0
@@ -71,12 +72,9 @@ clusterGenes <- function(expr_matrix, k, method = function(x) {
 #' @param weight A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.
 #' @param method method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.
 #' @param verbose Verbose A logic flag to determine whether or not we should print the running details.
-#' @param ... Additional arguments passed to \code{\link{densityClust}()}
+#' @param ... Additional arguments passed to \code{\link[densityClust]{densityClust}()}
 #' @return an updated CellDataSet object, in which phenoData contains values for Cluster for each cell
-#' @importFrom densityClust densityClust findClusters
-#' @importFrom igraph graph.data.frame cluster_louvain modularity membership
-#' @import ggplot2
-#' @importFrom RANN nn2
+#'
 #' @references Rodriguez, A., & Laio, A. (2014). Clustering by fast search and find of density peaks. Science, 344(6191), 1492-1496. doi:10.1126/science.1242072
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
 #' @references Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
@@ -84,30 +82,30 @@ clusterGenes <- function(expr_matrix, k, method = function(x) {
 #' @useDynLib monocle
 #'
 #' @export
-
-clusterCells <- function(cds,
-                         skip_rho_sigma = F,
-                         num_clusters = NULL,
-                         inspect_rho_sigma = F,
-                         rho_threshold = NULL,
-                         delta_threshold = NULL,
-                         peaks = NULL,
-                         gaussian = T,
-                         cell_type_hierarchy = NULL,
-                         frequency_thresh = NULL,
-                         enrichment_thresh = NULL,
-                         clustering_genes = NULL,
-                         k = 50,
-                         louvain_iter = 1,
-                         weight = FALSE,
-                         method = c("densityPeak", "louvain", "DDRTree"),
-                         verbose = F,
-                         ...) {
+clusterCells <- function(
+    cds,
+    skip_rho_sigma = F,
+    num_clusters = NULL,
+    inspect_rho_sigma = F,
+    rho_threshold = NULL,
+    delta_threshold = NULL,
+    peaks = NULL,
+    gaussian = TRUE,
+    cell_type_hierarchy = NULL,
+    frequency_thresh = NULL,
+    enrichment_thresh = NULL,
+    clustering_genes = NULL,
+    k = 50,
+    louvain_iter = 1,
+    weight = FALSE,
+    method = c("densityPeak", "louvain", "DDRTree"),
+    verbose = F,
+    ...) {
   method <- match.arg(method)
 
   if (ncol(cds) > 500000) {
     if (method %in% c("densityPeak", "DDRTree")) {
-      warning("Number of cells in your data is larger than 50 k, clusterCells with densityPeak or DDRTree may crash. Please try to use the newly added Louvain clustering algorithm!")
+      log_message("Number of cells in your data is larger than 50 k, clusterCells with densityPeak or DDRTree may crash. Please try to use the newly added Louvain clustering algorithm!", message_type = "warning")
     }
   }
 
@@ -150,7 +148,7 @@ clusterCells <- function(cds,
       stop("reduced dimension space doesn't match the dimension of the CellDataSet object")
     }
 
-    dataDist <- dist(t(tsne_data))
+    dataDist <- stats::dist(t(tsne_data))
 
     if (skip_rho_sigma &
       !is.null(cds@auxClusteringData[["tSNE"]]$densityPeak) &
@@ -170,27 +168,19 @@ clusterCells <- function(cds,
       dataClust <- dataClust[c("rho", "delta", "distance", "dc", "threshold", "peaks", "clusters", "halo", "nearest_higher_density_neighbor")]
       class(dataClust) <- "densityCluster"
     } else {
-      if (verbose) {
-        message("Run densityPeak algorithm to automatically cluster cells based on distance of cells on tSNE components...")
-      }
+      log_message("Run densityPeak algorithm to automatically cluster cells based on distance of cells on tSNE components...", verbose = verbose)
       dataClust <- densityClust::densityClust(dataDist, gaussian = gaussian)
     }
     if (!is.null(rho_threshold) & !is.null(delta_threshold)) {
-      if (verbose) {
-        message("Use the user provided rho and delta for assigning the density peaks and clusters")
-      }
+      log_message("Use the user provided rho and delta for assigning the density peaks and clusters", verbose = verbose)
     } else {
       if (is.null(num_clusters)) {
-        if (verbose) {
-          message("Use 0.95 of the delta and 0.95 of the rho as the cutoff for assigning density peaks and clusters")
-        }
+        log_message("Use 0.95 of the delta and 0.95 of the rho as the cutoff for assigning density peaks and clusters", verbose = verbose)
 
-        rho_threshold <- quantile(dataClust$rho, probs = 0.95)
-        delta_threshold <- quantile(dataClust$delta, probs = 0.95)
+        rho_threshold <- stats::quantile(dataClust$rho, probs = 0.95)
+        delta_threshold <- stats::quantile(dataClust$delta, probs = 0.95)
       } else {
-        if (verbose) {
-          message(paste("Select top ", num_clusters, "samples with highest delta as the density peaks and for assigning clusters"))
-        }
+        log_message("Select top {num_clusters} samples with highest delta as the density peaks and for assigning clusters", verbose = verbose)
 
         delta_rho_df <- data.frame("delta" = dataClust$delta, "rho" = dataClust$rho)
         rho_threshold <- 0
@@ -198,17 +188,13 @@ clusterCells <- function(cds,
       }
     }
 
-
     if (inspect_rho_sigma == F) {
       dataClust <- densityClust::findClusters(dataClust, rho = rho_threshold, delta = delta_threshold, peaks = peaks)
     } else {
-      if (verbose) {
-        message("Please click on the decision plot to select rho and delta for density peak clustering...")
-      }
+      log_message("Please click on the decision plot to select rho and delta for density peak clustering...", verbose = verbose)
 
       dataClust <- densityClust::findClusters(dataClust)
     }
-
 
     pData(cds)$Cluster <- factor(dataClust$clusters)
     pData(cds)$peaks <- F
@@ -242,47 +228,34 @@ clusterCells <- function(cds,
       stop("k must be smaller than the total number of points!")
     }
 
-    if (verbose) {
-      message(
-        "Run phenograph starts:", "\n",
-        "  -Input data of ", nrow(data), " rows and ", ncol(data), " columns", "\n",
-        "  -k is set to ", k
-      )
-    }
+    log_message(
+      "Run phenograph starts:\n  -Input data of {nrow(data)} rows and {ncol(data)} columns\n  -k is set to {k}",
+      verbose = verbose
+    )
 
-    if (verbose) {
-      cat("  Finding nearest neighbors...")
-    }
-    t1 <- system.time(neighborMatrix <- nn2(data, data, k + 1, searchtype = "standard")[[1]][, -1])
-    if (verbose) {
-      cat("DONE ~", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets...")
-    }
+    log_message("  Finding nearest neighbors...", verbose = verbose)
+    t1 <- system.time(neighborMatrix <- RANN::nn2(data, data, k + 1, searchtype = "standard")[[1]][, -1])
+    log_message("DONE ~ {t1[3]} s\n Compute jaccard coefficient between nearest-neighbor sets...", verbose = verbose)
 
     t2 <- system.time(links <- jaccard_coeff(neighborMatrix, weight))
 
-    if (verbose) {
-      cat("DONE ~", t2[3], "s\n", " Build undirected graph from the weighted links...")
-    }
+    log_message("DONE ~ {t2[3]} s\n Build undirected graph from the weighted links...", verbose = verbose)
 
     links <- links[links[, 1] > 0, ]
     relations <- as.data.frame(links)
     colnames(relations) <- c("from", "to", "weight")
-    t3 <- system.time(g <- graph.data.frame(relations, directed = FALSE))
+    t3 <- system.time(g <- igraph::graph_from_data_frame(relations, directed = FALSE))
 
-    if (verbose) {
-      cat("DONE ~", t3[3], "s\n", " Run louvain clustering on the graph ...")
-    }
+    log_message("DONE ~ {t3[3]} s\n Run louvain clustering on the graph ...", verbose = verbose)
 
     t_start <- Sys.time()
     Qp <- -1
     optim_res <- NULL
 
     for (iter in 1:louvain_iter) {
-      Q <- cluster_louvain(g)
+      Q <- igraph::cluster_louvain(g)
 
-      if (verbose) {
-        cat("Running louvain iteration ", iter, "...")
-      }
+      log_message("Running louvain iteration {iter}...", verbose = verbose)
 
       if (is.null(optim_res)) {
         Qp <- max(Q$modularity)
@@ -298,13 +271,9 @@ clusterCells <- function(cds,
 
     t_end <- Sys.time()
 
-    if (verbose) {
-      message("Run phenograph DONE, totally takes ", t_end - t_start, " s.")
-      cat("  Return a community class\n  -Modularity value:", modularity(optim_res), "\n")
-      cat("  -Number of clusters:", length(unique(membership(optim_res))))
-    }
+    log_message("Run phenograph DONE, totally takes {t_end - t_start} s.\n  Return a community class\n  -Modularity value: {igraph::modularity(optim_res)}\n  -Number of clusters: {length(unique(igraph::membership(optim_res)))}", verbose = verbose)
 
-    pData(cds)$Cluster <- factor(membership(optim_res))
+    pData(cds)$Cluster <- factor(igraph::membership(optim_res))
 
     cds@auxClusteringData[["louvian"]] <- list(g = g, community = optim_res)
 

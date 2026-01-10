@@ -24,18 +24,18 @@ setReplaceMethod("sizeFactors", signature(object = "CellDataSet", value = "numer
   object
 })
 
-
 #' @rdname CellDataSet-methods
 #' @param locfunc A function applied to the geometric-mean-scaled expression values to derive the size factor.
 #' @param ... Additional arguments to be passed to estimateSizeFactorsForMatrix
-#' @importFrom BiocGenerics sizeFactors<-
-#' @importFrom BiocGenerics estimateSizeFactors
 #' @aliases CellDataSet,ANY,ANY-method
 setMethod(
   "estimateSizeFactors",
   signature(object = "CellDataSet"),
   function(object, locfunc = median, ...) {
-    sizeFactors(object) <- estimateSizeFactorsForMatrix(exprs(object), locfunc = locfunc, ...)
+    BiocGenerics::sizeFactors(object) <- estimateSizeFactorsForMatrix(
+      exprs(object),
+      locfunc = locfunc, ...
+    )
     object
   }
 )
@@ -48,8 +48,6 @@ setMethod(
 #' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
 #' @param cores The number of cores to use for computing dispersions
 #' @aliases CellDataSet,ANY,ANY-method
-#' @importFrom BiocGenerics sizeFactors
-#' @importFrom BiocGenerics estimateDispersions
 setMethod(
   "estimateDispersions",
   signature(object = "CellDataSet"),
@@ -61,16 +59,15 @@ setMethod(
       stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
     }
 
-    if (any(is.na(sizeFactors(object)))) {
+    if (any(is.na(BiocGenerics::sizeFactors(object)))) {
       stop("NAs found in size factors. Have you called 'estimateSizeFactors'?")
     }
 
     if (length(list(...)) != 0) {
-      warning("in estimateDispersions: Ignoring extra argument(s).")
+      log_message("in estimateDispersions: Ignoring extra argument(s).", message_type = "warning")
     }
 
     object@dispFitInfo <- new.env(hash = TRUE)
-
 
     dfi <- estimateDispersionsForCellDataSet(
       object,
@@ -87,14 +84,12 @@ setMethod(
   }
 )
 
-
-#' @importFrom BiocGenerics sizeFactors
 checkSizeFactors <- function(cds) {
   if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
-    if (is.null(sizeFactors(cds))) {
+    if (is.null(BiocGenerics::sizeFactors(cds))) {
       stop("Error: you must call estimateSizeFactors() before calling this function.")
     }
-    if (sum(is.na(sizeFactors(cds))) > 0) {
+    if (sum(is.na(BiocGenerics::sizeFactors(cds))) > 0) {
       stop("Error: one or more cells has a size factor of NA.")
     }
   }

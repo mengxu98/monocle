@@ -7,7 +7,7 @@
 genSmoothCurveResiduals(
   cds,
   trend_formula = "~sm.ns(Pseudotime, df = 3)",
-  relative_expr = T,
+  relative_expr = TRUE,
   residual_type = "response",
   cores = 1
 )

@@ -31,8 +31,8 @@ HSMM <- estimateDispersions(HSMM)
 HSMM <- detectGenes(HSMM, min_expr = 0.1)
 HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
 if (ncol(HSMM) > 0 && "Total_mRNAs" %in% colnames(pData(HSMM)) && is.numeric(pData(HSMM)$Total_mRNAs) && length(pData(HSMM)$Total_mRNAs) > 0) {
-  upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-  lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
+  upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+  lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
   HSMM <- HSMM[, pData(HSMM)$Total_mRNAs > lower_bound & pData(HSMM)$Total_mRNAs < upper_bound]
 }
 cth <- newCellTypeHierarchy()

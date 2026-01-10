@@ -12,7 +12,7 @@ clusterCells(
   rho_threshold = NULL,
   delta_threshold = NULL,
   peaks = NULL,
-  gaussian = T,
+  gaussian = TRUE,
   cell_type_hierarchy = NULL,
   frequency_thresh = NULL,
   enrichment_thresh = NULL,
@@ -62,7 +62,7 @@ will automatically calculated based on the top num_cluster product of rho and si
 
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
 
-\item{...}{Additional arguments passed to \code{\link{densityClust}()}}
+\item{...}{Additional arguments passed to \code{\link[densityClust]{densityClust}()}}
 }
 \value{
 an updated CellDataSet object, in which phenoData contains values for Cluster for each cell

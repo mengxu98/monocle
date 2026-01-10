@@ -16,7 +16,7 @@ cth}
 type}
 
 \item{parent_cell_type_name}{If this cell type is a subtype of another,
-provide its name here}
+provide its name here.}
 }
 \description{
 adds a cell type to a pre-existing CellTypeHierarchy and produces a function that accepts

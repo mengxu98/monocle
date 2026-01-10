@@ -1,14 +1,8 @@
-utils::globalVariables(c(
-  "Pseudotime", "value", "ids", "prin_graph_dim_1", "prin_graph_dim_2", "State",
-  "value", "feature_label", "expectation", "colInd", "rowInd", "value",
-  "source_prin_graph_dim_1", "source_prin_graph_dim_2"
-))
-
 monocle_theme_opts <- function() {
   theme(strip.background = element_rect(colour = "white", fill = "white")) +
     theme(panel.border = element_blank()) +
-    theme(axis.line.x = element_line(size = 0.25, color = "black")) +
-    theme(axis.line.y = element_line(size = 0.25, color = "black")) +
+    theme(axis.line.x = element_line(linewidth = 0.25, color = "black")) +
+    theme(axis.line.y = element_line(linewidth = 0.25, color = "black")) +
     theme(panel.grid.minor.x = element_blank(), panel.grid.minor.y = element_blank()) +
     theme(panel.grid.major.x = element_blank(), panel.grid.major.y = element_blank()) +
     theme(panel.background = element_rect(fill = "white")) +
@@ -37,12 +31,7 @@ monocle_theme_opts <- function() {
 #' @param theta How many degrees you want to rotate the trajectory
 #' @param ... Additional arguments passed into scale_color_viridis function
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom igraph get.edgelist
-#' @importFrom tibble rownames_to_column
-#' @importFrom viridis scale_color_viridis
-#' @importFrom dplyr left_join mutate n slice
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -51,25 +40,26 @@ monocle_theme_opts <- function() {
 #' plot_cell_trajectory(lung, color_by = "Pseudotime", show_backbone = FALSE)
 #' plot_cell_trajectory(lung, markers = "MYH3")
 #' }
-plot_cell_trajectory <- function(cds,
-                                 x = 1,
-                                 y = 2,
-                                 color_by = "State",
-                                 show_tree = TRUE,
-                                 show_backbone = TRUE,
-                                 backbone_color = "black",
-                                 markers = NULL,
-                                 use_color_gradient = FALSE,
-                                 markers_linear = FALSE,
-                                 show_cell_names = FALSE,
-                                 show_state_number = FALSE,
-                                 cell_size = 1.5,
-                                 cell_link_size = 0.75,
-                                 cell_name_size = 2,
-                                 state_number_size = 2.9,
-                                 show_branch_points = TRUE,
-                                 theta = 0,
-                                 ...) {
+plot_cell_trajectory <- function(
+    cds,
+    x = 1,
+    y = 2,
+    color_by = "State",
+    show_tree = TRUE,
+    show_backbone = TRUE,
+    backbone_color = "black",
+    markers = NULL,
+    use_color_gradient = FALSE,
+    markers_linear = FALSE,
+    show_cell_names = FALSE,
+    show_state_number = FALSE,
+    cell_size = 1.5,
+    cell_link_size = 0.75,
+    cell_name_size = 2,
+    state_number_size = 2.9,
+    show_branch_points = TRUE,
+    theta = 0,
+    ...) {
   requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
@@ -93,8 +83,8 @@ plot_cell_trajectory <- function(cds,
 
   ica_space_df <- Matrix::t(reduced_dim_coords) %>%
     as.data.frame() %>%
-    select(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
-    mutate(sample_name = rownames(.), sample_state = rownames(.))
+    dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+    dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
   dp_mst <- minSpanningTree(cds)
 
@@ -104,16 +94,30 @@ plot_cell_trajectory <- function(cds,
 
   edge_df <- dp_mst %>%
     igraph::as_data_frame() %>%
-    select(source = from, target = to) %>%
-    left_join(ica_space_df %>% select(source = sample_name, source_prin_graph_dim_1 = prin_graph_dim_1, source_prin_graph_dim_2 = prin_graph_dim_2), by = "source") %>%
-    left_join(ica_space_df %>% select(target = sample_name, target_prin_graph_dim_1 = prin_graph_dim_1, target_prin_graph_dim_2 = prin_graph_dim_2), by = "target")
+    dplyr::select(source = from, target = to) %>%
+    dplyr::left_join(
+      ica_space_df %>% dplyr::select(
+        source = sample_name,
+        source_prin_graph_dim_1 = prin_graph_dim_1,
+        source_prin_graph_dim_2 = prin_graph_dim_2
+      ),
+      by = "source"
+    ) %>%
+    dplyr::left_join(
+      ica_space_df %>% dplyr::select(
+        target = sample_name,
+        target_prin_graph_dim_1 = prin_graph_dim_1,
+        target_prin_graph_dim_2 = prin_graph_dim_2
+      ),
+      by = "target"
+    )
 
   data_df <- t(monocle::reducedDimS(cds)) %>%
     as.data.frame() %>%
-    select(data_dim_1 = x, data_dim_2 = y) %>%
-    rownames_to_column("sample_name") %>%
-    mutate(sample_state) %>%
-    left_join(lib_info_with_pseudo %>% rownames_to_column("sample_name"), by = "sample_name")
+    dplyr::select(data_dim_1 = x, data_dim_2 = y) %>%
+    tibble::rownames_to_column("sample_name") %>%
+    dplyr::mutate(sample_state) %>%
+    dplyr::left_join(lib_info_with_pseudo %>% tibble::rownames_to_column("sample_name"), by = "sample_name")
 
   return_rotation_mat <- function(theta) {
     theta <- theta / 180 * pi
@@ -132,7 +136,9 @@ plot_cell_trajectory <- function(cds,
   if (is.null(markers) == FALSE) {
     markers_fData <- subset(fData(cds), gene_short_name %in% markers)
     if (nrow(markers_fData) >= 1) {
-      markers_exprs <- reshape2::melt(as.matrix(exprs(cds[row.names(markers_fData), ])))
+      markers_exprs <- reshape2::melt(
+        as.matrix(exprs(cds[row.names(markers_fData), ]))
+      )
       colnames(markers_exprs)[1:2] <- c("feature_id", "cell_id")
       markers_exprs <- merge(markers_exprs, markers_fData, by.x = "feature_id", by.y = "row.names")
       markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
@@ -145,12 +151,19 @@ plot_cell_trajectory <- function(cds,
       if (markers_linear) {
         g <- ggplot(data = data_df, aes(x = data_dim_1, y = data_dim_2)) +
           geom_point(aes(color = value), size = I(cell_size), na.rm = TRUE) +
-          scale_color_viridis(name = paste0("value"), ...) +
+          viridis::scale_color_viridis(name = paste0("value"), ...) +
           facet_wrap(~feature_label)
       } else {
-        g <- ggplot(data = data_df, aes(x = data_dim_1, y = data_dim_2)) +
-          geom_point(aes(color = log10(value + 0.1)), size = I(cell_size), na.rm = TRUE) +
-          scale_color_viridis(name = paste0("log10(value + 0.1)"), ...) +
+        g <- ggplot(
+          data = data_df, aes(x = data_dim_1, y = data_dim_2)
+        ) +
+          geom_point(
+            aes(color = log10(value + 0.1)),
+            size = I(cell_size), na.rm = TRUE
+          ) +
+          viridis::scale_color_viridis(
+            name = paste0("log10(value + 0.1)"), ...
+          ) +
           facet_wrap(~feature_label)
       }
     } else {
@@ -181,12 +194,11 @@ plot_cell_trajectory <- function(cds,
     }
   }
 
-
   if (show_branch_points && cds@dim_reduce_type == "DDRTree") {
     mst_branch_nodes <- cds@auxOrderingData[[cds@dim_reduce_type]]$branch_points
     branch_point_df <- ica_space_df %>%
-      slice(match(mst_branch_nodes, sample_name)) %>%
-      mutate(branch_point_idx = seq_len(n()))
+      dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
+      dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
     g <- g +
       geom_point(aes_string(x = "prin_graph_dim_1", y = "prin_graph_dim_2"),
@@ -232,8 +244,7 @@ plot_cell_trajectory <- function(cds,
 #' @param cell_name_size the size of cell name labels
 #' @param show_branch_points Whether to show icons for each branch point (only available when reduceDimension was called with DDRTree)
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
+#'
 #' @export
 #' @seealso plot_cell_trajectory
 #' @examples
@@ -244,19 +255,20 @@ plot_cell_trajectory <- function(cds,
 #' plot_cell_trajectory(HSMM, color_by = "Pseudotime", show_backbone = FALSE)
 #' plot_cell_trajectory(HSMM, markers = "MYH3")
 #' }
-plot_spanning_tree <- function(cds,
-                               x = 1,
-                               y = 2,
-                               color_by = "State",
-                               show_tree = TRUE,
-                               show_backbone = TRUE,
-                               backbone_color = "black",
-                               markers = NULL,
-                               show_cell_names = FALSE,
-                               cell_size = 1.5,
-                               cell_link_size = 0.75,
-                               cell_name_size = 2,
-                               show_branch_points = TRUE) {
+plot_spanning_tree <- function(
+    cds,
+    x = 1,
+    y = 2,
+    color_by = "State",
+    show_tree = TRUE,
+    show_backbone = TRUE,
+    backbone_color = "black",
+    markers = NULL,
+    show_cell_names = FALSE,
+    cell_size = 1.5,
+    cell_link_size = 0.75,
+    cell_name_size = 2,
+    show_branch_points = TRUE) {
   .Deprecated("plot_cell_trajectory")
   plot_cell_trajectory(
     cds = cds,
@@ -274,7 +286,6 @@ plot_spanning_tree <- function(cds,
     show_branch_points = show_branch_points
   )
 }
-
 
 #' @title Plots expression for one or more genes as a violin plot
 #'
@@ -295,9 +306,7 @@ plot_spanning_tree <- function(cds,
 #' @param relative_expr Whether to transform expression into relative values
 #' @param log_scale a boolean that determines whether or not to scale data logarithmically
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -306,10 +315,11 @@ plot_spanning_tree <- function(cds,
 #' my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))), ]
 #' plot_genes_violin(my_genes, grouping = "Hours", ncol = 2, min_expr = 0.1)
 #' }
-plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
-                              nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
-                              plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
-                              log_scale = TRUE) {
+plot_genes_violin <- function(
+    cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
+    nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
+    plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
+    log_scale = TRUE) {
   if (cds_subset@expressionFamily@vfamily %in% c(
     "negbinomial",
     "negbinomial.size"
@@ -322,10 +332,10 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
   if (integer_expression) {
     cds_exprs <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / sizeFactors(cds_subset))
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / BiocGenerics::sizeFactors(cds_subset))
     }
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
@@ -339,14 +349,10 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_pData <- pData(cds_subset)
 
-
   cds_fData <- fData(cds_subset)
   cds_exprs <- merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
   cds_exprs <- merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
   cds_exprs$adjusted_expression <- log10(cds_exprs$expression)
-
-
-
 
   if (label_by_short_name == TRUE) {
     if (is.null(cds_exprs$gene_short_name) == FALSE) {
@@ -391,7 +397,6 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
     q <- q + expand_limits(y = c(min_expr, 1))
   }
 
-
   q <- q + ylab("Expression") + xlab(grouping)
 
   if (log_scale == TRUE) {
@@ -399,7 +404,6 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
   }
   q
 }
-
 
 #' Plots expression for one or more genes as a jittered, grouped points
 #'
@@ -419,9 +423,7 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
 #' @param relative_expr Whether to transform expression into relative values
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -430,17 +432,18 @@ plot_genes_violin <- function(cds_subset, grouping = "State", min_expr = NULL, c
 #' my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("MYOG", "ID1", "CCNB2"))), ]
 #' plot_genes_jitter(my_genes, grouping = "Media", ncol = 2)
 #' }
-plot_genes_jitter <- function(cds_subset,
-                              grouping = "State",
-                              min_expr = NULL,
-                              cell_size = 0.75,
-                              nrow = NULL,
-                              ncol = 1,
-                              panel_order = NULL,
-                              color_by = NULL,
-                              plot_trend = FALSE,
-                              label_by_short_name = TRUE,
-                              relative_expr = TRUE) {
+plot_genes_jitter <- function(
+    cds_subset,
+    grouping = "State",
+    min_expr = NULL,
+    cell_size = 0.75,
+    nrow = NULL,
+    ncol = 1,
+    panel_order = NULL,
+    color_by = NULL,
+    plot_trend = FALSE,
+    label_by_short_name = TRUE,
+    relative_expr = TRUE) {
   if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
     integer_expression <- TRUE
   } else {
@@ -451,10 +454,10 @@ plot_genes_jitter <- function(cds_subset,
   if (integer_expression) {
     cds_exprs <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / sizeFactors(cds_subset))
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / BiocGenerics::sizeFactors(cds_subset))
     }
     cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
   } else {
@@ -485,7 +488,6 @@ plot_genes_jitter <- function(cds_subset,
   } else {
     cds_exprs$feature_label <- cds_exprs$f_id
   }
-
 
   if (is.null(panel_order) == FALSE) {
     cds_exprs$feature_label <- factor(cds_exprs$feature_label, levels = panel_order)
@@ -537,10 +539,7 @@ plot_genes_jitter <- function(cds_subset,
 #' @param relative_expr Whether to transform expression into relative values
 #' @param plot_limits A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom plyr ddply
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -549,16 +548,17 @@ plot_genes_jitter <- function(cds_subset,
 #' MYOG_ID1 <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("MYOG", "ID1"))), ]
 #' plot_genes_positive_cells(MYOG_ID1, grouping = "Media", ncol = 2)
 #' }
-plot_genes_positive_cells <- function(cds_subset,
-                                      grouping = "State",
-                                      min_expr = 0.1,
-                                      nrow = NULL,
-                                      ncol = 1,
-                                      panel_order = NULL,
-                                      plot_as_fraction = TRUE,
-                                      label_by_short_name = TRUE,
-                                      relative_expr = TRUE,
-                                      plot_limits = c(0, 100)) {
+plot_genes_positive_cells <- function(
+    cds_subset,
+    grouping = "State",
+    min_expr = 0.1,
+    nrow = NULL,
+    ncol = 1,
+    panel_order = NULL,
+    plot_as_fraction = TRUE,
+    label_by_short_name = TRUE,
+    relative_expr = TRUE,
+    plot_limits = c(0, 100)) {
   percent <- NULL
 
   if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
@@ -571,10 +571,10 @@ plot_genes_positive_cells <- function(cds_subset,
   if (integer_expression) {
     marker_exprs <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / sizeFactors(cds_subset))
+      marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / BiocGenerics::sizeFactors(cds_subset))
     }
     marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
   } else {
@@ -626,7 +626,6 @@ plot_genes_positive_cells <- function(cds_subset,
   return(qp)
 }
 
-
 #' Plots expression for one or more genes as a function of pseudotime
 #'
 #' @description Plots expression for one or more genes as a function of pseudotime.
@@ -646,10 +645,7 @@ plot_genes_positive_cells <- function(cds_subset,
 #' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom plyr ddply .
-#' @importFrom reshape2 melt
-#' @importFrom ggplot2 Position
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -659,18 +655,19 @@ plot_genes_positive_cells <- function(cds_subset,
 #' cds_subset <- HSMM[my_genes, ]
 #' plot_genes_in_pseudotime(cds_subset, color_by = "Time")
 #' }
-plot_genes_in_pseudotime <- function(cds_subset,
-                                     min_expr = NULL,
-                                     cell_size = 0.75,
-                                     nrow = NULL,
-                                     ncol = 1,
-                                     panel_order = NULL,
-                                     color_by = "State",
-                                     trend_formula = "~ sm.ns(Pseudotime, df=3)",
-                                     label_by_short_name = TRUE,
-                                     relative_expr = TRUE,
-                                     vertical_jitter = NULL,
-                                     horizontal_jitter = NULL) {
+plot_genes_in_pseudotime <- function(
+    cds_subset,
+    min_expr = NULL,
+    cell_size = 0.75,
+    nrow = NULL,
+    ncol = 1,
+    panel_order = NULL,
+    color_by = "State",
+    trend_formula = "~ sm.ns(Pseudotime, df=3)",
+    label_by_short_name = TRUE,
+    relative_expr = TRUE,
+    vertical_jitter = NULL,
+    horizontal_jitter = NULL) {
   f_id <- NA
   Cell <- NA
   if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
@@ -682,10 +679,10 @@ plot_genes_in_pseudotime <- function(cds_subset,
   if (integer_expression) {
     cds_exprs <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / sizeFactors(cds_subset))
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / BiocGenerics::sizeFactors(cds_subset))
     }
     cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
   } else {
@@ -721,10 +718,12 @@ plot_genes_in_pseudotime <- function(cds_subset,
   new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
   model_expectation <- genSmoothCurves(cds_subset,
     cores = 1, trend_formula = trend_formula,
-    relative_expr = T, new_data = new_data
+    relative_expr = TRUE, new_data = new_data
   )
   colnames(model_expectation) <- colnames(cds_subset)
-  expectation <- ddply(cds_exprs, .(f_id, Cell), function(x) data.frame("expectation" = model_expectation[x$f_id, x$Cell]))
+  expectation <- plyr::ddply(
+    cds_exprs, .(f_id, Cell), function(x) data.frame("expectation" = model_expectation[x$f_id, x$Cell])
+  )
   cds_exprs <- merge(cds_exprs, expectation)
 
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
@@ -776,11 +775,7 @@ plot_genes_in_pseudotime <- function(cds_subset,
 #' @param row_samples how many genes to randomly select from the data
 #' @param callout_ids a vector of gene names or gene ids to manually render as part of the plot
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom stringr str_c
-#' @importFrom ggplot2 Position
-#' @import grid
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -791,14 +786,15 @@ plot_genes_in_pseudotime <- function(cds_subset,
 #' clusters <- clusterGenes(expression_curve_matrix, k = 4)
 #' plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 #' }
-plot_clusters <- function(cds,
-                          clustering,
-                          drawSummary = TRUE,
-                          sumFun = mean_cl_boot,
-                          ncol = NULL,
-                          nrow = NULL,
-                          row_samples = NULL,
-                          callout_ids = NULL) {
+plot_clusters <- function(
+    cds,
+    clustering,
+    drawSummary = TRUE,
+    sumFun = mean_cl_boot,
+    ncol = NULL,
+    nrow = NULL,
+    row_samples = NULL,
+    callout_ids = NULL) {
   .Deprecated("plot_genes_heatmap")
   m <- as.data.frame(clustering$exprs)
   m$ids <- rownames(clustering$exprs)
@@ -811,12 +807,11 @@ plot_clusters <- function(cds,
   cluster_sizes <- as.data.frame(table(m$cluster))
 
   cluster_sizes$Freq <- paste("(", cluster_sizes$Freq, ")")
-  facet_labels <- str_c(cluster_sizes$Var1, cluster_sizes$Freq, sep = " ")
+  facet_labels <- stringr::str_c(cluster_sizes$Var1, cluster_sizes$Freq, sep = " ")
 
-  m.melt <- melt(m, id.vars = c("ids", "cluster"))
+  m.melt <- reshape2::melt(m, id.vars = c("ids", "cluster"))
 
   m.melt <- merge(m.melt, pData(cds), by.x = "variable", by.y = "row.names")
-
 
   if (is.null(row_samples) == FALSE) {
     m.melt <- m.melt[sample(nrow(m.melt), row_samples), ]
@@ -832,7 +827,6 @@ plot_clusters <- function(cds,
     )
   }
 
-
   c <- c + scale_color_hue(l = 50, h.start = 200) + theme(axis.text.x = element_text(
     angle = 0,
     hjust = 0
@@ -843,7 +837,6 @@ plot_clusters <- function(cds,
     theme(panel.grid.minor.x = element_blank(), panel.grid.minor.y = element_blank()) +
     theme(panel.grid.major.x = element_blank(), panel.grid.major.y = element_blank())
 
-
   if (is.null(callout_ids) == FALSE) {
     callout_melt <- subset(m.melt, ids %in% callout_ids)
     c <- c + geom_line(aes(x = Pseudotime, y = value), data = callout_melt, color = I("steelblue"))
@@ -851,7 +844,6 @@ plot_clusters <- function(cds,
   c <- c + monocle_theme_opts()
   c
 }
-
 
 plot_genes_heatmap <- function(...) {
   .Deprecated("plot_pseudotime_heatmap")
@@ -883,35 +875,32 @@ plot_genes_heatmap <- function(...) {
 #' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
 #' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
 #' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
-#' @import pheatmap
-#' @importFrom stats sd as.dist cor cutree
-#' @export
 #'
-
-plot_pseudotime_heatmap <- function(cds_subset,
-                                    cluster_rows = TRUE,
-                                    hclust_method = "ward.D2",
-                                    num_clusters = 6,
-                                    hmcols = NULL,
-                                    add_annotation_row = NULL,
-                                    add_annotation_col = NULL,
-                                    show_rownames = FALSE,
-                                    use_gene_short_name = TRUE,
-                                    norm_method = c("log", "vstExprs"),
-                                    scale_max = 3,
-                                    scale_min = -3,
-                                    trend_formula = "~sm.ns(Pseudotime, df=3)",
-                                    return_heatmap = FALSE,
-                                    cores = 1) {
+#' @export
+plot_pseudotime_heatmap <- function(
+    cds_subset,
+    cluster_rows = TRUE,
+    hclust_method = "ward.D2",
+    num_clusters = 6,
+    hmcols = NULL,
+    add_annotation_row = NULL,
+    add_annotation_col = NULL,
+    show_rownames = FALSE,
+    use_gene_short_name = TRUE,
+    norm_method = c("log", "vstExprs"),
+    scale_max = 3,
+    scale_min = -3,
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    return_heatmap = FALSE,
+    cores = 1) {
   num_clusters <- min(num_clusters, nrow(cds_subset))
   pseudocount <- 1
   newdata <- data.frame(Pseudotime = seq(min(pData(cds_subset)$Pseudotime), max(pData(cds_subset)$Pseudotime), length.out = 100))
 
   m <- genSmoothCurves(cds_subset,
     cores = cores, trend_formula = trend_formula,
-    relative_expr = T, new_data = newdata
+    relative_expr = TRUE, new_data = newdata
   )
-
 
   m <- m[!apply(m, 1, sum) == 0, ]
 
@@ -923,7 +912,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
     m <- log10(m + pseudocount)
   }
 
-  m <- m[!apply(m, 1, sd) == 0, ]
+  m <- m[!apply(m, 1, stats::sd) == 0, ]
   m <- Matrix::t(scale(Matrix::t(m), center = TRUE))
   m <- m[is.na(row.names(m)) == FALSE, ]
   m[is.nan(m)] <- 0
@@ -932,7 +921,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
 
   heatmap_matrix <- m
 
-  row_dist <- as.dist((1 - cor(Matrix::t(heatmap_matrix))) / 2)
+  row_dist <- stats::as.dist((1 - stats::cor(Matrix::t(heatmap_matrix))) / 2)
   row_dist[is.na(row_dist)] <- 1
 
   if (is.null(hmcols)) {
@@ -943,7 +932,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
   }
 
   ph <- pheatmap(heatmap_matrix,
-    useRaster = T,
+    useRaster = TRUE,
     cluster_cols = FALSE,
     cluster_rows = cluster_rows,
     show_rownames = F,
@@ -959,7 +948,9 @@ plot_pseudotime_heatmap <- function(cds_subset,
   )
 
   if (cluster_rows) {
-    annotation_row <- data.frame(Cluster = factor(cutree(ph$tree_row, num_clusters)))
+    annotation_row <- data.frame(
+      Cluster = factor(stats::cutree(ph$tree_row, num_clusters))
+    )
   } else {
     annotation_row <- NULL
   }
@@ -1005,7 +996,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
   colnames(heatmap_matrix) <- c(1:ncol(heatmap_matrix))
 
   ph_res <- pheatmap(heatmap_matrix[, ],
-    useRaster = T,
+    useRaster = TRUE,
     cluster_cols = FALSE,
     cluster_rows = cluster_rows,
     show_rownames = show_rownames,
@@ -1030,7 +1021,6 @@ plot_pseudotime_heatmap <- function(cds_subset,
     return(ph_res)
   }
 }
-
 
 #' Plot the branch genes in pseduotime with separate branch curves.
 #'
@@ -1060,28 +1050,26 @@ plot_pseudotime_heatmap <- function(cds_subset,
 #' @param relative_expr Whether or not the plot should use relative expression values (only relevant for CellDataSets using transcript counts)
 #' @param ... Additional arguments passed on to branchTest. Only used when reducedModelFormulaStr is not NULL.
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom plyr ddply
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
+#'
 #' @export
-plot_genes_branched_pseudotime <- function(cds,
-                                           branch_states = NULL,
-                                           branch_point = 1,
-                                           branch_labels = NULL,
-                                           method = "fitting",
-                                           min_expr = NULL,
-                                           cell_size = 0.75,
-                                           nrow = NULL,
-                                           ncol = 1,
-                                           panel_order = NULL,
-                                           color_by = "State",
-                                           expression_curve_linetype_by = "Branch",
-                                           trend_formula = "~ sm.ns(Pseudotime, df=3) * Branch",
-                                           reducedModelFormulaStr = NULL,
-                                           label_by_short_name = TRUE,
-                                           relative_expr = TRUE,
-                                           ...) {
+plot_genes_branched_pseudotime <- function(
+    cds,
+    branch_states = NULL,
+    branch_point = 1,
+    branch_labels = NULL,
+    method = "fitting",
+    min_expr = NULL,
+    cell_size = 0.75,
+    nrow = NULL,
+    ncol = 1,
+    panel_order = NULL,
+    color_by = "State",
+    expression_curve_linetype_by = "Branch",
+    trend_formula = "~ sm.ns(Pseudotime, df=3) * Branch",
+    reducedModelFormulaStr = NULL,
+    label_by_short_name = TRUE,
+    relative_expr = TRUE,
+    ...) {
   Branch <- NA
   if (is.null(reducedModelFormulaStr) == FALSE) {
     pval_df <- branchTest(cds,
@@ -1093,7 +1081,7 @@ plot_genes_branched_pseudotime <- function(cds,
     )
     fData(cds)[, "pval"] <- pval_df[row.names(cds), "pval"]
   }
-  if ("Branch" %in% all.vars(terms(as.formula(trend_formula)))) {
+  if ("Branch" %in% all.vars(terms(stats::as.formula(trend_formula)))) {
     cds_subset <- buildBranchCellDataSet(
       cds = cds,
       branch_states = branch_states,
@@ -1114,10 +1102,10 @@ plot_genes_branched_pseudotime <- function(cds,
   if (integer_expression) {
     CM <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      CM <- Matrix::t(Matrix::t(CM) / sizeFactors(cds_subset))
+      CM <- Matrix::t(Matrix::t(CM) / BiocGenerics::sizeFactors(cds_subset))
     }
     cds_exprs <- reshape2::melt(round(as.matrix(CM)))
   } else {
@@ -1154,7 +1142,7 @@ plot_genes_branched_pseudotime <- function(cds,
 
   full_model_expectation <- genSmoothCurves(cds_subset,
     cores = 1, trend_formula = trend_formula,
-    relative_expr = T, new_data = new_data
+    relative_expr = TRUE, new_data = new_data
   )
   colnames(full_model_expectation) <- colnames(cds_subset)
 
@@ -1162,7 +1150,7 @@ plot_genes_branched_pseudotime <- function(cds,
   if (!is.null(reducedModelFormulaStr)) {
     reduced_model_expectation <- genSmoothCurves(cds_subset,
       cores = 1, trend_formula = reducedModelFormulaStr,
-      relative_expr = T, new_data = new_data
+      relative_expr = TRUE, new_data = new_data
     )
     colnames(reduced_model_expectation) <- colnames(cds_subset)
     cds_exprs$reduced_model_expectation <- apply(cds_exprs, 1, function(x) reduced_model_expectation[x[2], x[1]])
@@ -1247,23 +1235,21 @@ plot_genes_branched_pseudotime <- function(cds,
 #' @param show_density a boolean that indicates whether a 2D density estimation should be shown in the plot
 #' @param round_expr a boolean that indicates whether cds_expr values should be rounded or not
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-plot_coexpression_matrix <- function(cds,
-                                     rowgenes,
-                                     colgenes,
-                                     relative_expr = TRUE,
-                                     min_expr = NULL,
-                                     cell_size = 0.85,
-                                     label_by_short_name = TRUE,
-                                     show_density = TRUE,
-                                     round_expr = FALSE) {
+plot_coexpression_matrix <- function(
+    cds,
+    rowgenes,
+    colgenes,
+    relative_expr = TRUE,
+    min_expr = NULL,
+    cell_size = 0.85,
+    label_by_short_name = TRUE,
+    show_density = TRUE,
+    round_expr = FALSE) {
   gene_short_name <- NA
   f_id <- NA
   adjusted_expression.x <- NULL
   adjusted_expression.y <- NULL
   ..density.. <- NULL
-
 
   row_gene_ids <- row.names(subset(fData(cds), gene_short_name %in% rowgenes))
   row_gene_ids <- union(row_gene_ids, intersect(rowgenes, row.names(fData(cds))))
@@ -1283,10 +1269,10 @@ plot_coexpression_matrix <- function(cds,
   if (integer_expression) {
     cds_exprs <- exprs(cds_subset)
     if (relative_expr) {
-      if (is.null(sizeFactors(cds_subset))) {
+      if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
       }
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / sizeFactors(cds_subset))
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / BiocGenerics::sizeFactors(cds_subset))
     }
     if (round_expr) {
       cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
@@ -1309,7 +1295,6 @@ plot_coexpression_matrix <- function(cds,
   cds_exprs <- merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
 
   cds_exprs$adjusted_expression <- cds_exprs$expression
-
 
   if (label_by_short_name == TRUE) {
     if (is.null(cds_exprs$gene_short_name) == FALSE) {
@@ -1350,7 +1335,6 @@ plot_coexpression_matrix <- function(cds,
     q <- q + expand_limits(y = c(min_expr, 1), x = c(min_expr, 1))
   }
 
-
   q
 }
 
@@ -1373,7 +1357,6 @@ table.ramp <- function(n, mid = 0.5, sill = 0.5, base = 1, height = 1) {
   height * y
 }
 
-#' @importFrom grDevices rgb
 rgb.tables <- function(
     n,
     red = c(0.75, 0.25, 1),
@@ -1382,7 +1365,7 @@ rgb.tables <- function(
   rr <- do.call("table.ramp", as.list(c(n, red)))
   gr <- do.call("table.ramp", as.list(c(n, green)))
   br <- do.call("table.ramp", as.list(c(n, blue)))
-  rgb(rr, gr, br)
+  grDevices::rgb(rr, gr, br)
 }
 
 matlab.like <- function(n) rgb.tables(n)
@@ -1427,29 +1410,28 @@ blue2green2red <- matlab.like2
 #' @param ... Additional arguments passed to buildBranchCellDataSet
 #' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
 #' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
-#' @import pheatmap
-#' @importFrom stats sd as.dist cor cutree
-#' @export
 #'
-plot_genes_branched_heatmap <- function(cds_subset,
-                                        branch_point = 1,
-                                        branch_states = NULL,
-                                        branch_labels = c("Cell fate 1", "Cell fate 2"),
-                                        cluster_rows = TRUE,
-                                        hclust_method = "ward.D2",
-                                        num_clusters = 6,
-                                        hmcols = NULL,
-                                        branch_colors = c("#979797", "#F05662", "#7990C8"),
-                                        add_annotation_row = NULL,
-                                        add_annotation_col = NULL,
-                                        show_rownames = FALSE,
-                                        use_gene_short_name = TRUE,
-                                        scale_max = 3,
-                                        scale_min = -3,
-                                        norm_method = c("log", "vstExprs"),
-                                        trend_formula = "~sm.ns(Pseudotime, df=3) * Branch",
-                                        return_heatmap = FALSE,
-                                        cores = 1, ...) {
+#' @export
+plot_genes_branched_heatmap <- function(
+    cds_subset,
+    branch_point = 1,
+    branch_states = NULL,
+    branch_labels = c("Cell fate 1", "Cell fate 2"),
+    cluster_rows = TRUE,
+    hclust_method = "ward.D2",
+    num_clusters = 6,
+    hmcols = NULL,
+    branch_colors = c("#979797", "#F05662", "#7990C8"),
+    add_annotation_row = NULL,
+    add_annotation_col = NULL,
+    show_rownames = FALSE,
+    use_gene_short_name = TRUE,
+    scale_max = 3,
+    scale_min = -3,
+    norm_method = c("log", "vstExprs"),
+    trend_formula = "~sm.ns(Pseudotime, df=3) * Branch",
+    return_heatmap = FALSE,
+    cores = 1, ...) {
   cds <- NA
   new_cds <- buildBranchCellDataSet(cds_subset,
     branch_states = branch_states,
@@ -1476,7 +1458,7 @@ plot_genes_branched_heatmap <- function(cds_subset,
 
   BranchAB_exprs <- genSmoothCurves(new_cds[, ],
     cores = cores, trend_formula = trend_formula,
-    relative_expr = T, new_data = rbind(newdataA, newdataB)
+    relative_expr = TRUE, new_data = rbind(newdataA, newdataB)
   )
 
   BranchA_exprs <- BranchAB_exprs[, 1:100]
@@ -1499,7 +1481,7 @@ plot_genes_branched_heatmap <- function(cds_subset,
 
   heatmap_matrix <- cbind(BranchA_exprs[, (col_gap_ind - 1):1], BranchB_exprs)
 
-  heatmap_matrix <- heatmap_matrix[!apply(heatmap_matrix, 1, sd) == 0, ]
+  heatmap_matrix <- heatmap_matrix[!apply(heatmap_matrix, 1, stats::sd) == 0, ]
   heatmap_matrix <- Matrix::t(scale(Matrix::t(heatmap_matrix), center = TRUE))
   heatmap_matrix <- heatmap_matrix[is.na(row.names(heatmap_matrix)) == FALSE, ]
   heatmap_matrix[is.nan(heatmap_matrix)] <- 0
@@ -1509,7 +1491,7 @@ plot_genes_branched_heatmap <- function(cds_subset,
   heatmap_matrix_ori <- heatmap_matrix
   heatmap_matrix <- heatmap_matrix[is.finite(heatmap_matrix[, 1]) & is.finite(heatmap_matrix[, col_gap_ind]), ]
 
-  row_dist <- as.dist((1 - cor(Matrix::t(heatmap_matrix))) / 2)
+  row_dist <- stats::as.dist((1 - stats::cor(Matrix::t(heatmap_matrix))) / 2)
   row_dist[is.na(row_dist)] <- 1
 
   exp_rng <- range(heatmap_matrix)
@@ -1519,7 +1501,7 @@ plot_genes_branched_heatmap <- function(cds_subset,
   }
 
   ph <- pheatmap(heatmap_matrix,
-    useRaster = T,
+    useRaster = TRUE,
     cluster_cols = FALSE,
     cluster_rows = TRUE,
     show_rownames = F,
@@ -1533,7 +1515,11 @@ plot_genes_branched_heatmap <- function(cds_subset,
     color = hmcols
   )
 
-  annotation_row <- data.frame(Cluster = factor(cutree(ph$tree_row, num_clusters)))
+  annotation_row <- data.frame(
+    Cluster = factor(
+      stats::cutree(ph$tree_row, num_clusters)
+    )
+  )
 
   if (!is.null(add_annotation_row)) {
     annotation_row <- cbind(annotation_row, add_annotation_row[row.names(annotation_row), ])
@@ -1578,7 +1564,7 @@ plot_genes_branched_heatmap <- function(cds_subset,
   row.names(annotation_row) <- row_ann_labels
 
   ph_res <- pheatmap(heatmap_matrix[, ],
-    useRaster = T,
+    useRaster = TRUE,
     cluster_cols = FALSE,
     cluster_rows = TRUE,
     show_rownames = show_rownames,
@@ -1630,8 +1616,14 @@ plot_ordering_genes <- function(cds) {
   gene_id <- NA
   ordering_genes <- row.names(subset(fData(cds), use_for_ordering == TRUE))
 
-  g <- qplot(mean_expression, dispersion_empirical, data = disp_table, log = "xy", color = I("darkgrey")) +
-    geom_line(aes(y = dispersion_fit), color = "red")
+  g <- ggplot(
+    disp_table,
+    aes(x = mean_expression, y = dispersion_empirical)
+  ) +
+    geom_point(color = "darkgrey") +
+    geom_line(aes(y = dispersion_fit), color = "red") +
+    scale_x_log10() +
+    scale_y_log10()
   if (length(ordering_genes) > 0) {
     g <- g + geom_point(aes(mean_expression, dispersion_empirical),
       data = subset(disp_table, gene_id %in% ordering_genes), color = "black"
@@ -1653,9 +1645,7 @@ plot_ordering_genes <- function(cds) {
 #' @param cell_name_size the size of cell name labels
 #' @param ... additional arguments passed into the scale_color_viridis function
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom viridis scale_color_viridis
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -1666,15 +1656,16 @@ plot_ordering_genes <- function(cds) {
 #' plot_cell_clusters(HSMM, color_by = "Pseudotime")
 #' plot_cell_clusters(HSMM, markers = "MYH3")
 #' }
-plot_cell_clusters <- function(cds,
-                               x = 1,
-                               y = 2,
-                               color_by = "Cluster",
-                               markers = NULL,
-                               show_cell_names = FALSE,
-                               cell_size = 1.5,
-                               cell_name_size = 2,
-                               ...) {
+plot_cell_clusters <- function(
+    cds,
+    x = 1,
+    y = 2,
+    color_by = "Cluster",
+    markers = NULL,
+    show_cell_names = FALSE,
+    cell_size = 1.5,
+    cell_name_size = 2,
+    ...) {
   if (is.null(cds@reducedDimA) | length(pData(cds)$Cluster) == 0) {
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
@@ -1705,10 +1696,10 @@ plot_cell_clusters <- function(cds,
       if (integer_expression) {
         cds_exprs <- exprs(cds_subset)
 
-        if (is.null(sizeFactors(cds_subset))) {
+        if (is.null(BiocGenerics::sizeFactors(cds_subset))) {
           stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
         }
-        cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / sizeFactors(cds_subset))
+        cds_exprs <- Matrix::t(Matrix::t(cds_exprs) / BiocGenerics::sizeFactors(cds_subset))
 
         cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
       } else {
@@ -1732,7 +1723,7 @@ plot_cell_clusters <- function(cds,
 
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0) {
     g <- g + geom_point(aes(color = log10(value + 0.1)), size = I(cell_size), na.rm = TRUE) +
-      scale_color_viridis(name = paste0("log10(value + 0.1)"), ...)
+      viridis::scale_color_viridis(name = paste0("log10(value + 0.1)"), ...)
   } else {
     g <- g + geom_point(aes_string(color = color_by), size = I(cell_size), na.rm = TRUE)
   }
@@ -1778,7 +1769,9 @@ plot_rho_delta <- function(cds, rho_threshold = NULL, delta_threshold = NULL) {
 
     df <- data.frame(rho = pData(cds)$rho, delta = pData(cds)$delta, peaks = peaks)
 
-    g <- qplot(rho, delta, data = df, alpha = I(0.5), color = peaks) + monocle_theme_opts() +
+    g <- ggplot(df, aes(x = rho, y = delta, color = peaks)) +
+      geom_point(alpha = 0.5) +
+      monocle_theme_opts() +
       theme(legend.position = "top", legend.key.height = grid::unit(0.35, "in")) +
       scale_color_manual(values = c("grey", "black")) +
       theme(legend.key = element_blank()) +
@@ -1808,15 +1801,16 @@ plot_rho_delta <- function(cds, rho_threshold = NULL, delta_threshold = NULL) {
 #' HSMM <- load_HSMM()
 #' plot_pc_variance_explained(HSMM)
 #' }
-plot_pc_variance_explained <- function(cds,
-                                       max_components = 100,
-                                       norm_method = c("log", "vstExprs", "none"),
-                                       residualModelFormulaStr = NULL,
-                                       pseudo_expr = NULL,
-                                       return_all = F,
-                                       use_existing_pc_variance = FALSE,
-                                       verbose = FALSE,
-                                       ...) {
+plot_pc_variance_explained <- function(
+    cds,
+    max_components = 100,
+    norm_method = c("log", "vstExprs", "none"),
+    residualModelFormulaStr = NULL,
+    pseudo_expr = NULL,
+    return_all = FALSE,
+    use_existing_pc_variance = FALSE,
+    verbose = FALSE,
+    ...) {
   set.seed(2016)
   if (!is.null(cds@auxClusteringData[["tSNE"]]$variance_explained) & use_existing_pc_variance == T) {
     prop_varex <- cds@auxClusteringData[["tSNE"]]$variance_explained
@@ -1828,10 +1822,8 @@ plot_pc_variance_explained <- function(cds,
     FM <- FM[xsd > 0, ]
 
     if (is.null(residualModelFormulaStr) == FALSE) {
-      if (verbose) {
-        message("Removing batch effects")
-      }
-      X.model_mat <- sparse.model.matrix(as.formula(residualModelFormulaStr),
+      log_message("Removing batch effects", verbose = verbose)
+      X.model_mat <- sparse.model.matrix(stats::as.formula(residualModelFormulaStr),
         data = pData(cds), drop.unused.levels = TRUE
       )
 
@@ -1853,7 +1845,7 @@ plot_pc_variance_explained <- function(cds,
 
     n_components <- min(max_components, min(dim(FM)) - 1)
     if (n_components <= 0) {
-      pca_res <- prcomp(t(FM), center = TRUE, scale. = TRUE)
+      pca_res <- stats::prcomp(t(FM), center = TRUE, scale. = TRUE)
       prop_varex <- pca_res$sdev^2 / sum(pca_res$sdev^2)
     } else {
       irlba_res <- prcomp_irlba(t(FM),
@@ -1864,9 +1856,13 @@ plot_pc_variance_explained <- function(cds,
     }
   }
 
-  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) + monocle_theme_opts() +
+  df <- data.frame(component = 1:length(prop_varex), prop_varex = prop_varex)
+  p <- ggplot(df, aes(x = component, y = prop_varex)) +
+    geom_point(alpha = 0.5) +
+    monocle_theme_opts() +
     theme(legend.position = "top", legend.key.height = grid::unit(0.35, "in")) +
-    theme(panel.background = element_rect(fill = "white")) + xlab("components") +
+    theme(panel.background = element_rect(fill = "white")) +
+    xlab("components") +
     ylab("Variance explained \n by each component")
 
   cds@auxClusteringData[["tSNE"]]$variance_explained <- prop_varex
@@ -1878,13 +1874,18 @@ plot_pc_variance_explained <- function(cds,
   }
 }
 
-#' @importFrom igraph shortest_paths degree shortest.paths
 traverseTree <- function(g, starting_cell, end_cells) {
-  distance <- shortest.paths(g, v = starting_cell, to = end_cells)
-  branchPoints <- which(degree(g) == 3)
-  path <- shortest_paths(g, from = starting_cell, end_cells)
+  distance <- igraph::distances(g, v = starting_cell, to = end_cells)
+  branchPoints <- which(igraph::degree(g) == 3)
+  path <- igraph::shortest_paths(g, from = starting_cell, to = end_cells)
 
-  return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))
+  return(
+    list(
+      shortest_path = path$vpath,
+      distance = distance,
+      branch_points = intersect(branchPoints, unlist(path$vpath))
+    )
+  )
 }
 
 #' Plots the minimum spanning tree on cells.
@@ -1905,10 +1906,7 @@ traverseTree <- function(g, starting_cell, end_cells) {
 #' @param show_branch_points Whether to show icons for each branch point (only available when reduceDimension was called with DDRTree)
 #' @param ... Additional arguments passed to the scale_color_viridis function
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom igraph V get.edgelist layout_as_tree
-#' @importFrom reshape2 melt
-#' @importFrom viridis scale_color_viridis
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -1918,21 +1916,22 @@ traverseTree <- function(g, starting_cell, end_cells) {
 #' plot_complex_cell_trajectory(HSMM, color_by = "Pseudotime", show_backbone = FALSE)
 #' plot_complex_cell_trajectory(HSMM, markers = "MYH3")
 #' }
-plot_complex_cell_trajectory <- function(cds,
-                                         x = 1,
-                                         y = 2,
-                                         root_states = NULL,
-                                         color_by = "State",
-                                         show_tree = TRUE,
-                                         show_backbone = TRUE,
-                                         backbone_color = "black",
-                                         markers = NULL,
-                                         show_cell_names = FALSE,
-                                         cell_size = 1.5,
-                                         cell_link_size = 0.75,
-                                         cell_name_size = 2,
-                                         show_branch_points = TRUE,
-                                         ...) {
+plot_complex_cell_trajectory <- function(
+    cds,
+    x = 1,
+    y = 2,
+    root_states = NULL,
+    color_by = "State",
+    show_tree = TRUE,
+    show_backbone = TRUE,
+    backbone_color = "black",
+    markers = NULL,
+    show_cell_names = FALSE,
+    cell_size = 1.5,
+    cell_link_size = 0.75,
+    cell_name_size = 2,
+    show_branch_points = TRUE,
+    ...) {
   gene_short_name <- NA
   sample_name <- NA
   data_dim_1 <- NA
@@ -1959,10 +1958,9 @@ plot_complex_cell_trajectory <- function(cds,
 
   dp_mst <- minSpanningTree(cds)
 
-
   if (is.null(root_states)) {
     if (is.null(lib_info_with_pseudo$Pseudotime)) {
-      root_cell <- row.names(lib_info_with_pseudo)[degree(dp_mst) == 1][1]
+      root_cell <- row.names(lib_info_with_pseudo)[igraph::degree(dp_mst) == 1][1]
     } else {
       root_cell <- row.names(subset(lib_info_with_pseudo, Pseudotime == 0))
     }
@@ -1973,16 +1971,13 @@ plot_complex_cell_trajectory <- function(cds,
   } else {
     candidate_root_cells <- row.names(subset(pData(cds), State %in% root_states))
     if (cds@dim_reduce_type == "ICA") {
-      root_cell <- candidate_root_cells[which(degree(dp_mst, candidate_root_cells) == 1)]
+      root_cell <- candidate_root_cells[which(igraph::degree(dp_mst, candidate_root_cells) == 1)]
     } else {
       Y_candidate_root_cells <- V(dp_mst)$name[cds@auxOrderingData$DDRTree$pr_graph_cell_proj_closest_vertex[candidate_root_cells, ]]
-      root_cell <- Y_candidate_root_cells[which(degree(dp_mst, Y_candidate_root_cells) == 1)]
+      root_cell <- Y_candidate_root_cells[which(igraph::degree(dp_mst, Y_candidate_root_cells) == 1)]
     }
   }
-
-
-
-  tree_coords <- layout_as_tree(dp_mst, root = root_cell)
+  tree_coords <- igraph::layout_as_tree(dp_mst, root = root_cell)
 
   ica_space_df <- data.frame(tree_coords)
   row.names(ica_space_df) <- colnames(reduced_dim_coords)
@@ -1990,19 +1985,17 @@ plot_complex_cell_trajectory <- function(cds,
 
   ica_space_df$sample_name <- row.names(ica_space_df)
 
-
   if (is.null(dp_mst)) {
     stop("You must first call orderCells() before using this function")
   }
 
-  edge_list <- as.data.frame(get.edgelist(dp_mst))
+  edge_list <- as.data.frame(igraph::get.edgelist(dp_mst))
   colnames(edge_list) <- c("source", "target")
 
   edge_df <- merge(ica_space_df, edge_list, by.x = "sample_name", by.y = "source", all = TRUE)
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1" = "source_prin_graph_dim_1", "prin_graph_dim_2" = "source_prin_graph_dim_2"))
   edge_df <- merge(edge_df, ica_space_df[, c("sample_name", "prin_graph_dim_1", "prin_graph_dim_2")], by.x = "target", by.y = "sample_name", all = TRUE)
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1" = "target_prin_graph_dim_1", "prin_graph_dim_2" = "target_prin_graph_dim_2"))
-
 
   if (cds@dim_reduce_type == "ICA") {
     S_matrix <- tree_coords[, ]
@@ -2042,14 +2035,14 @@ plot_complex_cell_trajectory <- function(cds,
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0) {
     if (inherits(data_df[, color_by], "numeric")) {
       g <- g + geom_jitter(aes_string(color = paste0("log10(", color_by, " + 0.1)")), size = I(cell_size), na.rm = TRUE, height = 5) +
-        scale_color_viridis(name = paste0("log10(", color_by, ")"), ...)
+        viridis::scale_color_viridis(name = paste0("log10(", color_by, ")"), ...)
     } else {
       g <- g + geom_jitter(aes_string(color = color_by), size = I(cell_size), na.rm = TRUE, height = 5)
     }
   } else {
     if (inherits(data_df[, color_by], "numeric")) {
       g <- g + geom_jitter(aes_string(color = paste0("log10(", color_by, " + 0.1)")), size = I(cell_size), na.rm = TRUE, height = 5) +
-        scale_color_viridis(name = paste0("log10(", color_by, " + 0.1)"), ...)
+        viridis::scale_color_viridis(name = paste0("log10(", color_by, " + 0.1)"), ...)
     } else {
       g <- g + geom_jitter(aes_string(color = color_by), size = I(cell_size), na.rm = TRUE, height = 5)
     }
@@ -2113,26 +2106,26 @@ plot_complex_cell_trajectory <- function(cds,
 #' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
 #' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
 #' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
-#' @import pheatmap
-#' @export
 #'
-plot_multiple_branches_heatmap <- function(cds,
-                                           branches,
-                                           branches_name = NULL,
-                                           cluster_rows = TRUE,
-                                           hclust_method = "ward.D2",
-                                           num_clusters = 6,
-                                           hmcols = NULL,
-                                           add_annotation_row = NULL,
-                                           add_annotation_col = NULL,
-                                           show_rownames = FALSE,
-                                           use_gene_short_name = TRUE,
-                                           norm_method = c("vstExprs", "log"),
-                                           scale_max = 3,
-                                           scale_min = -3,
-                                           trend_formula = "~sm.ns(Pseudotime, df=3)",
-                                           return_heatmap = FALSE,
-                                           cores = 1) {
+#' @export
+plot_multiple_branches_heatmap <- function(
+    cds,
+    branches,
+    branches_name = NULL,
+    cluster_rows = TRUE,
+    hclust_method = "ward.D2",
+    num_clusters = 6,
+    hmcols = NULL,
+    add_annotation_row = NULL,
+    add_annotation_col = NULL,
+    show_rownames = FALSE,
+    use_gene_short_name = TRUE,
+    norm_method = c("vstExprs", "log"),
+    scale_max = 3,
+    scale_min = -3,
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    return_heatmap = FALSE,
+    cores = 1) {
   pseudocount <- 1
   if (!(all(branches %in% pData(cds)$State)) & length(branches) == 1) {
     stop("This function only allows to make multiple branch plots where branches is included in the pData")
@@ -2157,8 +2150,8 @@ plot_multiple_branches_heatmap <- function(cds,
       root_state_cells <- unique(paste("Y_", cds@auxOrderingData$DDRTree$pr_graph_cell_proj_closest_vertex[root_state_cells, ], sep = ""))
       branches_cells <- unique(paste("Y_", cds@auxOrderingData$DDRTree$pr_graph_cell_proj_closest_vertex[branches_cells, ], sep = ""))
     }
-    root_cell <- root_state_cells[which(degree(g, v = root_state_cells) == 1)]
-    tip_cell <- branches_cells[which(degree(g, v = branches_cells) == 1)]
+    root_cell <- root_state_cells[which(igraph::degree(g, v = root_state_cells) == 1)]
+    tip_cell <- branches_cells[which(igraph::degree(g, v = branches_cells) == 1)]
 
     traverse_res <- traverseTree(g, root_cell, tip_cell)
     path_cells <- names(traverse_res$shortest_path[[1]])
@@ -2174,7 +2167,7 @@ plot_multiple_branches_heatmap <- function(cds,
 
     tmp <- genSmoothCurves(cds_subset,
       cores = cores, trend_formula = trend_formula,
-      relative_expr = T, new_data = newdata
+      relative_expr = TRUE, new_data = newdata
     )
     if (is.null(m)) {
       m <- tmp
@@ -2193,7 +2186,7 @@ plot_multiple_branches_heatmap <- function(cds,
     m <- log10(m + pseudocount)
   }
 
-  m <- m[!apply(m, 1, sd) == 0, ]
+  m <- m[!apply(m, 1, stats::sd) == 0, ]
   m <- Matrix::t(scale(Matrix::t(m), center = TRUE))
   m <- m[is.na(row.names(m)) == FALSE, ]
   m[is.nan(m)] <- 0
@@ -2202,7 +2195,7 @@ plot_multiple_branches_heatmap <- function(cds,
 
   heatmap_matrix <- m
 
-  row_dist <- as.dist((1 - cor(Matrix::t(heatmap_matrix))) / 2)
+  row_dist <- stats::as.dist((1 - stats::cor(Matrix::t(heatmap_matrix))) / 2)
   row_dist[is.na(row_dist)] <- 1
 
   if (is.null(hmcols)) {
@@ -2212,10 +2205,11 @@ plot_multiple_branches_heatmap <- function(cds,
     bks <- seq(-3.1, 3.1, length.out = length(hmcols))
   }
 
-  ph <- pheatmap(heatmap_matrix,
-    useRaster = T,
+  ph <- pheatmap(
+    heatmap_matrix,
+    useRaster = TRUE,
     cluster_cols = FALSE,
-    cluster_rows = T,
+    cluster_rows = TRUE,
     show_rownames = F,
     show_colnames = F,
     clustering_distance_rows = row_dist,
@@ -2227,8 +2221,14 @@ plot_multiple_branches_heatmap <- function(cds,
     color = hmcols
   )
 
-  annotation_col <- data.frame(Branch = factor(rep(rep(branch_label, each = 100))))
-  annotation_row <- data.frame(Cluster = factor(cutree(ph$tree_row, num_clusters)))
+  annotation_col <- data.frame(
+    Branch = factor(rep(rep(branch_label, each = 100)))
+  )
+  annotation_row <- data.frame(
+    Cluster = factor(
+      stats::cutree(ph$tree_row, num_clusters)
+    )
+  )
   col_gaps_ind <- c(1:(length(branches) - 1)) * 100
 
   if (!is.null(add_annotation_row)) {
@@ -2236,7 +2236,6 @@ plot_multiple_branches_heatmap <- function(cds,
     annotation_row <- cbind(annotation_row, add_annotation_row[row.names(annotation_row), ])
     colnames(annotation_row)[(old_colnames_length + 1):ncol(annotation_row)] <- colnames(add_annotation_row)
   }
-
 
   if (use_gene_short_name == TRUE) {
     if (is.null(fData(cds)$gene_short_name) == FALSE) {
@@ -2257,7 +2256,6 @@ plot_multiple_branches_heatmap <- function(cds,
   row.names(heatmap_matrix) <- feature_label
   row.names(annotation_row) <- row_ann_labels
 
-
   colnames(heatmap_matrix) <- c(1:ncol(heatmap_matrix))
 
   if (!(cluster_rows)) {
@@ -2265,7 +2263,7 @@ plot_multiple_branches_heatmap <- function(cds,
   }
 
   ph_res <- pheatmap(heatmap_matrix[, ],
-    useRaster = T,
+    useRaster = TRUE,
     cluster_cols = FALSE,
     cluster_rows = cluster_rows,
     show_rownames = show_rownames,
@@ -2310,25 +2308,22 @@ plot_multiple_branches_heatmap <- function(cds,
 #' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
 #' @return a ggplot2 plot object
 #'
-#' @importFrom Biobase esApply exprs<-
-#' @importFrom stats lowess
-#'
 #' @export
-#'
-plot_multiple_branches_pseudotime <- function(cds,
-                                              branches,
-                                              branches_name = NULL,
-                                              min_expr = NULL,
-                                              cell_size = 0.75,
-                                              norm_method = c("vstExprs", "log"),
-                                              nrow = NULL,
-                                              ncol = 1,
-                                              panel_order = NULL,
-                                              color_by = "Branch",
-                                              trend_formula = "~sm.ns(Pseudotime, df=3)",
-                                              label_by_short_name = TRUE,
-                                              TPM = FALSE,
-                                              cores = 1) {
+plot_multiple_branches_pseudotime <- function(
+    cds,
+    branches,
+    branches_name = NULL,
+    min_expr = NULL,
+    cell_size = 0.75,
+    norm_method = c("vstExprs", "log"),
+    nrow = NULL,
+    ncol = 1,
+    panel_order = NULL,
+    color_by = "Branch",
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    label_by_short_name = TRUE,
+    TPM = FALSE,
+    cores = 1) {
   if (TPM) {
     exprs(cds) <- esApply(cds, 2, function(x) x / sum(x) * 1e6)
   }
@@ -2357,8 +2352,8 @@ plot_multiple_branches_pseudotime <- function(cds,
       root_state_cells <- unique(paste("Y_", cds@auxOrderingData$DDRTree$pr_graph_cell_proj_closest_vertex[root_state_cells, ], sep = ""))
       branches_cells <- unique(paste("Y_", cds@auxOrderingData$DDRTree$pr_graph_cell_proj_closest_vertex[branches_cells, ], sep = ""))
     }
-    root_cell <- root_state_cells[which(degree(g, v = root_state_cells) == 1)]
-    tip_cell <- branches_cells[which(degree(g, v = branches_cells) == 1)]
+    root_cell <- root_state_cells[which(igraph::degree(g, v = root_state_cells) == 1)]
+    tip_cell <- branches_cells[which(igraph::degree(g, v = branches_cells) == 1)]
 
     traverse_res <- traverseTree(g, root_cell, tip_cell)
     path_cells <- names(traverse_res$shortest_path[[1]])
@@ -2372,8 +2367,7 @@ plot_multiple_branches_pseudotime <- function(cds,
 
     newdata <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime, row.names = colnames(cds_subset))
 
-    tmp <- t(esApply(cds_subset, 1, function(x) lowess(x[order(pData(cds_subset)$Pseudotime)])$y))
-
+    tmp <- t(esApply(cds_subset, 1, function(x) stats::lowess(x[order(pData(cds_subset)$Pseudotime)])$y))
 
     colnames(tmp) <- colnames(cds_subset)[order(pData(cds_subset)$Pseudotime)]
 
@@ -2415,7 +2409,12 @@ plot_multiple_branches_pseudotime <- function(cds,
   cds_exprs <- merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
   cds_exprs <- merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
 
-  cds_exprs <- plyr::ddply(cds_exprs, .(Branch), mutate, Pseudotime = (Pseudotime - min(Pseudotime)) * 100 / (max(Pseudotime) - min(Pseudotime)))
+  cds_exprs <- plyr::ddply(
+    cds_exprs,
+    .(Branch),
+    dplyr::mutate,
+    Pseudotime = (Pseudotime - min(Pseudotime)) * 100 / (max(Pseudotime) - min(Pseudotime))
+  )
 
   if (label_by_short_name == TRUE) {
     if (is.null(cds_exprs$gene_short_name) == FALSE) {
@@ -2430,11 +2429,6 @@ plot_multiple_branches_pseudotime <- function(cds,
   cds_exprs$feature_label <- as.factor(cds_exprs$feature_label)
   cds_exprs$Branch <- as.factor(cds_exprs$Branch)
 
-
-
-
-
-
   cds_exprs$State <- as.factor(cds_exprs$State)
   cds_exprs$Branch <- as.factor(cds_exprs$Branch)
 
@@ -2443,7 +2437,6 @@ plot_multiple_branches_pseudotime <- function(cds,
     q <- q + geom_line(aes_string(color = color_by), size = I(cell_size))
   }
   q <- q + facet_wrap(~feature_label, nrow = nrow, ncol = ncol, scales = "free_y")
-
 
   q <- q + ylab("Expression") + xlab("Pseudotime (stretched)")
 

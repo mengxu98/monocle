@@ -22,5 +22,5 @@ estimateSizeFactorsForMatrix(
 "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".}
 }
 \description{
-@importFrom stats median
+Function to calculate the size factor for the single-cell RNA-seq data
 }

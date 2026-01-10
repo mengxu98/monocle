@@ -8,7 +8,7 @@ genSmoothCurves(
   cds,
   new_data,
   trend_formula = "~sm.ns(Pseudotime, df = 3)",
-  relative_expr = T,
+  relative_expr = TRUE,
   response_type = "response",
   cores = 1
 )

@@ -11,7 +11,7 @@ plot_pc_variance_explained(
   norm_method = c("log", "vstExprs", "none"),
   residualModelFormulaStr = NULL,
   pseudo_expr = NULL,
-  return_all = F,
+  return_all = FALSE,
   use_existing_pc_variance = FALSE,
   verbose = FALSE,
   ...

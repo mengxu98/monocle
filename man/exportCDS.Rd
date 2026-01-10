@@ -2,32 +2,26 @@
 % Please edit documentation in R/cds_conversion.R
 \name{exportCDS}
 \alias{exportCDS}
-\title{Export a monocle CellDataSet object to other popular single cell analysis toolkit.}
+\title{Export a monocle CellDataSet object to a Seurat object}
 \usage{
-exportCDS(monocle_cds, export_to = c("Seurat", "Scater"), export_all = FALSE)
+exportCDS(monocle_cds, export_all = FALSE)
 }
 \arguments{
-\item{monocle_cds}{the Monocle CellDataSet you would like to export into a type used in another package}
+\item{monocle_cds}{the Monocle CellDataSet you would like to export into a Seurat object}
 
-\item{export_to}{the object type you would like to export to, either Seurat or Scater}
-
-\item{export_all}{Whether or not to export all the slots in Monocle and keep in another object type. Default is FALSE (or only keep
-minimal dataset). If export_all is setted to be true, the original monocle cds will be keeped in the other cds object too.
-This argument is also only applicable when export_to is Seurat.}
+\item{export_all}{Whether or not to export all the slots in Monocle and keep in the Seurat object. Default is FALSE (or only keep
+minimal dataset). If export_all is setted to be true, the original monocle CellDataSet object will be keeped in the Seurat object too.}
 }
 \value{
-a new object in the format of another package, as described in the export_to argument.
+a new Seurat object.
 }
 \description{
-This function takes a monocle CellDataSet and converts it to another type of object used in another popular single cell analysis toolkit. It currently
-supports Scran and Seurat packages.
+Export a monocle CellDataSet object to a Seurat object
 }
 \examples{
 \dontrun{
 lung <- load_lung()
 seurat_lung <- exportCDS(lung)
 seurat_lung_all <- exportCDS(lung, export_all = T)
-scater_lung <- exportCDS(lung, export_to = "Scater")
-scater_lung_all <- exportCDS(lung, export_to = "Scater", export_all = T)
 }
 }

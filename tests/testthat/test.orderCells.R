@@ -35,9 +35,10 @@ pData(HSMM)$Total_mRNAs <- Matrix::colSums(exprs(HSMM))
 
 
 HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
-upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-qplot(Total_mRNAs, data = pData(HSMM), color = Hours, geom = "density") +
+upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+ggplot(pData(HSMM), aes(x = Total_mRNAs, color = Hours)) +
+  geom_density() +
   geom_vline(xintercept = lower_bound) +
   geom_vline(xintercept = upper_bound)
 
@@ -49,7 +50,7 @@ L <- log(exprs(HSMM[expressed_genes, ]))
 
 # Standardize each gene, so that they are all on the same scale,
 # Then melt the data with plyr so we can plot it easily"
-melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+melted_dens_df <- reshape2::melt(Matrix::t(scale(Matrix::t(L))))
 
 MYF5_id <- row.names(subset(fData(HSMM), gene_short_name == "MYF5"))
 ANPEP_id <- row.names(subset(fData(HSMM), gene_short_name == "ANPEP"))
@@ -146,9 +147,10 @@ pData(HSMM)$Total_mRNAs <- Matrix::colSums(exprs(HSMM))
 
 
 HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
-upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-qplot(Total_mRNAs, data = pData(HSMM), color = Hours, geom = "density") +
+upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+ggplot(pData(HSMM), aes(x = Total_mRNAs, color = Hours)) +
+  geom_density() +
   geom_vline(xintercept = lower_bound) +
   geom_vline(xintercept = upper_bound)
 
@@ -160,7 +162,7 @@ L <- log(exprs(HSMM[expressed_genes, ]))
 
 # Standardize each gene, so that they are all on the same scale,
 # Then melt the data with plyr so we can plot it easily"
-melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+melted_dens_df <- reshape2::melt(Matrix::t(scale(Matrix::t(L))))
 
 MYF5_id <- row.names(subset(fData(HSMM), gene_short_name == "MYF5"))
 ANPEP_id <- row.names(subset(fData(HSMM), gene_short_name == "ANPEP"))
@@ -252,9 +254,10 @@ pData(HSMM)$Total_mRNAs <- Matrix::colSums(exprs(HSMM))
 
 
 HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
-upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-qplot(Total_mRNAs, data = pData(HSMM), color = Hours, geom = "density") +
+upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+ggplot(pData(HSMM), aes(x = Total_mRNAs, color = Hours)) +
+  geom_density() +
   geom_vline(xintercept = lower_bound) +
   geom_vline(xintercept = upper_bound)
 
@@ -266,7 +269,7 @@ L <- log(exprs(HSMM[expressed_genes, ]))
 
 # Standardize each gene, so that they are all on the same scale,
 # Then melt the data with plyr so we can plot it easily"
-melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+melted_dens_df <- reshape2::melt(Matrix::t(scale(Matrix::t(L))))
 
 MYF5_id <- row.names(subset(fData(HSMM), gene_short_name == "MYF5"))
 ANPEP_id <- row.names(subset(fData(HSMM), gene_short_name == "ANPEP"))
@@ -348,9 +351,10 @@ pData(HSMM)$Total_mRNAs <- Matrix::colSums(exprs(HSMM))
 
 
 HSMM <- HSMM[, pData(HSMM)$Total_mRNAs < 1e6]
-upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * sd(log10(pData(HSMM)$Total_mRNAs)))
-qplot(Total_mRNAs, data = pData(HSMM), color = Hours, geom = "density") +
+upper_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) + 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(HSMM)$Total_mRNAs)) - 2 * stats::sd(log10(pData(HSMM)$Total_mRNAs)))
+ggplot(pData(HSMM), aes(x = Total_mRNAs, color = Hours)) +
+  geom_density() +
   geom_vline(xintercept = lower_bound) +
   geom_vline(xintercept = upper_bound)
 
@@ -362,7 +366,7 @@ L <- log(exprs(HSMM[expressed_genes, ]))
 
 # Standardize each gene, so that they are all on the same scale,
 # Then melt the data with plyr so we can plot it easily"
-melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+melted_dens_df <- reshape2::melt(Matrix::t(scale(Matrix::t(L))))
 
 MYF5_id <- row.names(subset(fData(HSMM), gene_short_name == "MYF5"))
 ANPEP_id <- row.names(subset(fData(HSMM), gene_short_name == "ANPEP"))

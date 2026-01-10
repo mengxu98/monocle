@@ -82,12 +82,11 @@ norm_kb <- function(kb, exprs_cds) {
   norm_exprs
 }
 
-#' @importFrom stats density
 dmode <- function(x, breaks = "Sturges") {
   if (length(x) < 2) {
     return(0)
   }
-  den <- density(x, kernel = c("gaussian"))
+  den <- stats::density(x, kernel = c("gaussian"))
   (den$x[den$y == max(den$y)])
 }
 
@@ -126,7 +125,6 @@ estimate_t <- function(relative_expr_matrix, relative_expr_thresh = 0.1) {
 #' @param t_estimate the TPM value that corresponds to 1 cDNA copy per cell
 #' @param expected_capture_rate The fraction of mRNAs captured as cDNAs
 #' @param method the formula to estimate the total mRNAs (num_genes corresponds to the second formula while tpm_fraction corresponds to the first formula, see the anouncement on Trapnell lab website for the Census paper)
-#' @importFrom stats ecdf
 calibrate_per_cell_total_proposal <- function(relative_exprs_matrix, t_estimate, expected_capture_rate, method = c("num_genes", "tpm_fraction")) {
   method <- match.arg(method)
   split_relative_exprs <- split(relative_exprs_matrix, rep(1:ncol(relative_exprs_matrix), each = nrow(relative_exprs_matrix)))
@@ -135,7 +133,7 @@ calibrate_per_cell_total_proposal <- function(relative_exprs_matrix, t_estimate,
     x <- split_relative_exprs[[ind]]
     x <- x[x > 0.1]
     if (method == "num_genes") {
-      P <- ecdf(x)
+      P <- stats::ecdf(x)
       frac_x <- P(t_estimate[ind])
     } else if (method == "tpm_fraction") {
       frac_x <- sum(x[x < t_estimate[ind]]) / sum(x)
@@ -178,9 +176,7 @@ calibrate_per_cell_total_proposal <- function(relative_exprs_matrix, t_estimate,
 #' @param verbose a logical flag to determine whether or not we should print all the optimization details
 #' @return an matrix of absolute count for isoforms or genes after the transformation.
 #' @export
-#' @importFrom plyr ddply .
-#' @importFrom stats optim
-#' @importFrom parallel mcmapply mclapply detectCores
+#'
 #' @examples
 #' \dontrun{
 #' HSMM_relative_expr_matrix <- exprs(HSMM)
@@ -228,9 +224,7 @@ relative2abs <- function(
     }
     valid_ids <- which(ERCC_annotation[, mixture_name] >=
       detection_threshold)
-    if (verbose) {
-      message("Performing robust linear regression for each cell based on the spikein data...")
-    }
+    log_message("Performing robust linear regression for each cell based on the spikein data...", verbose = verbose)
     molModels <- apply(ERCC_controls, 2, function(cell_exprs,
                                                   input.ERCC.annotation, valid_ids) {
       spike_df <- input.ERCC.annotation
@@ -262,10 +256,8 @@ relative2abs <- function(
       )
       molModel
     }, ERCC_annotation, valid_ids)
-    if (verbose) {
-      message("Apply the fitted robust linear regression model to recovery the absolute copy number for all transcripts each cell...")
-    }
-    norm_fpkms <- mcmapply(function(cell_exprs, molModel) {
+    log_message("Apply the fitted robust linear regression model to recovery the absolute copy number for all transcripts each cell...", verbose = verbose)
+    norm_fpkms <- parallel::mcmapply(function(cell_exprs, molModel) {
       tryCatch(
         {
           norm_df <- data.frame(log_fpkm = log10(cell_exprs))

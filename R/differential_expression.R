@@ -50,19 +50,19 @@ diff_test_helper <- function(x,
     {
       if (expressionFamily@vfamily %in% c("binomialff")) {
         if (verbose) {
-          full_model_fit <- VGAM::vglm(as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
-          reduced_model_fit <- VGAM::vglm(as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
+          full_model_fit <- VGAM::vglm(stats::as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
+          reduced_model_fit <- VGAM::vglm(stats::as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
         } else {
-          full_model_fit <- suppressWarnings(VGAM::vglm(as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
-          reduced_model_fit <- suppressWarnings(VGAM::vglm(as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
+          full_model_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
+          reduced_model_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
         }
       } else {
         if (verbose) {
-          full_model_fit <- VGAM::vglm(as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
-          reduced_model_fit <- VGAM::vglm(as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
+          full_model_fit <- VGAM::vglm(stats::as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
+          reduced_model_fit <- VGAM::vglm(stats::as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
         } else {
-          full_model_fit <- suppressWarnings(VGAM::vglm(as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
-          reduced_model_fit <- suppressWarnings(VGAM::vglm(as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
+          full_model_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
+          reduced_model_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily))
         }
       }
 
@@ -84,7 +84,7 @@ diff_test_helper <- function(x,
 #' @param full_models a list of models, e.g. as returned by fitModels(), forming the numerators of the L.R.Ts.
 #' @param reduced_models a list of models, e.g. as returned by fitModels(), forming the denominators of the L.R.Ts.
 #' @return a data frame containing the p values and q-values from the likelihood ratio tests on the parallel arrays of models.
-#' @importFrom stats p.adjust
+#'
 #' @export
 compareModels <- function(full_models, reduced_models) {
   stopifnot(length(full_models) == length(reduced_models))
@@ -103,7 +103,7 @@ compareModels <- function(full_models, reduced_models) {
   }, full_models, reduced_models, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
   test_res <- do.call(rbind.data.frame, test_res)
-  test_res$qval <- p.adjust(test_res$pval, method = "BH")
+  test_res$qval <- stats::p.adjust(test_res$pval, method = "BH")
   test_res
 }
 
@@ -122,8 +122,7 @@ compareModels <- function(full_models, reduced_models) {
 #' @param cores the number of cores to be used while testing each gene for differential expression.
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @return a data frame containing the p values and q-values from the likelihood ratio tests on the parallel arrays of models.
-#' @importFrom Biobase fData
-#' @importFrom stats p.adjust
+#'
 #' @seealso \code{\link[VGAM]{vglm}}
 #' @export
 differentialGeneTest <- function(cds,
@@ -149,9 +148,8 @@ differentialGeneTest <- function(cds,
     }
   }
 
-
   if (relative_expr && cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
-    if (is.null(sizeFactors(cds)) || sum(is.na(sizeFactors(cds)))) {
+    if (is.null(BiocGenerics::sizeFactors(cds)) || sum(is.na(BiocGenerics::sizeFactors(cds)))) {
       stop("Error: to call this function with relative_expr==TRUE, you must first call estimateSizeFactors() on the CellDataSet.")
     }
   }
@@ -184,7 +182,10 @@ differentialGeneTest <- function(cds,
   diff_test_res <- do.call(rbind.data.frame, diff_test_res)
 
   diff_test_res$qval <- 1
-  diff_test_res$qval[which(diff_test_res$status == "OK")] <- p.adjust(subset(diff_test_res, status == "OK")[, "pval"], method = "BH")
+  diff_test_res$qval[which(diff_test_res$status == "OK")] <- stats::p.adjust(
+    subset(diff_test_res, status == "OK")[, "pval"],
+    method = "BH"
+  )
 
   diff_test_res <- merge(diff_test_res, fData(cds), by = "row.names")
   row.names(diff_test_res) <- diff_test_res[, 1]

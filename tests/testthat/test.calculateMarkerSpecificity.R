@@ -44,10 +44,11 @@ L <- log(exprs(HSMM[expressed_genes, ]))
 
 # Standardize each gene, so that they are all on the same scale,
 # Then melt the data with plyr so we can plot it easily
-melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+melted_dens_df <- reshape2::melt(Matrix::t(scale(Matrix::t(L))))
 
 # Plot the distribution of the standardized gene expression values.
-qplot(value, geom = "density", data = melted_dens_df) +
+ggplot(melted_dens_df, aes(x = value)) +
+  geom_density() +
   stat_function(fun = dnorm, size = 0.5, color = "red") +
   xlab("Standardized log(FPKM)") +
   ylab("Density")

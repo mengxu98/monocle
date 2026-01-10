@@ -30,11 +30,9 @@ get_genome_in_matrix_path <- function(matrix_path, genome = NULL) {
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
 #' @param barcode_filtered Load only the cell-containing barcodes
 #' @param lowerDetectionLimit the minimum expression level that consistitutes true expression (passed to newCellDataSet)
-#' @importFrom utils read.delim
 #' @param expressionFamily the VGAM family function to be used for expression response variables (passed to newCellDataSet)
 #' @return a new CellDataSet object
 #' @export
-#' @importFrom Matrix readMM
 #' @examples
 #' \dontrun{
 #' # Load from a Cell Ranger output directory
@@ -82,9 +80,9 @@ load_cellranger_data <- function(pipestance_path = NULL, genome = NULL, barcode_
   if (!file.exists(matrix.loc)) {
     stop("Expression matrix file missing")
   }
-  data <- readMM(matrix.loc)
+  data <- Matrix::readMM(matrix.loc)
 
-  feature.names <- read.delim(features.loc,
+  feature.names <- utils::read.delim(features.loc,
     header = FALSE,
     stringsAsFactors = FALSE
   )
@@ -104,7 +102,7 @@ load_cellranger_data <- function(pipestance_path = NULL, genome = NULL, barcode_
       if (any(gfilter)) {
         allowed <- allowed & grepl(genome, feature.names$V1)
       } else {
-        message("Data does not appear to be from a multi-genome sample, simply returning all gene feature data without filtering by genome.")
+        log_message("Data does not appear to be from a multi-genome sample, simply returning all gene feature data without filtering by genome.")
       }
     }
     data <- data[allowed, ]
@@ -114,7 +112,7 @@ load_cellranger_data <- function(pipestance_path = NULL, genome = NULL, barcode_
   rownames(data) <- feature.names[, "id"]
   rownames(feature.names) <- feature.names[, "id"]
 
-  barcodes <- read.delim(barcode.loc, stringsAsFactors = FALSE, header = FALSE)
+  barcodes <- utils::read.delim(barcode.loc, stringsAsFactors = FALSE, header = FALSE)
   if (dim(data)[2] != length(barcodes[, 1])) {
     stop(sprintf("Mismatch dimension between barcode file: \n\t %s\n and matrix file: \n\t %s\n", barcode.loc, matrix.loc))
   }

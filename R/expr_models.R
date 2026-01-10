@@ -8,13 +8,14 @@
 #' @title Helper function for parallel VGAM fitting
 #' @name fit_model_helper
 #' @description test
-fit_model_helper <- function(x,
-                             modelFormulaStr,
-                             expressionFamily,
-                             relative_expr,
-                             disp_func = NULL,
-                             verbose = FALSE,
-                             ...) {
+fit_model_helper <- function(
+    x,
+    modelFormulaStr,
+    expressionFamily,
+    relative_expr,
+    disp_func = NULL,
+    verbose = FALSE,
+    ...) {
   modelFormulaStr <- paste("f_expression", modelFormulaStr,
     sep = ""
   )
@@ -47,11 +48,11 @@ fit_model_helper <- function(x,
   tryCatch(
     {
       if (verbose) {
-        FM_fit <- VGAM::vglm(as.formula(modelFormulaStr),
+        FM_fit <- VGAM::vglm(stats::as.formula(modelFormulaStr),
           family = expressionFamily, epsilon = 1e-1
         )
       } else {
-        FM_fit <- suppressWarnings(VGAM::vglm(as.formula(modelFormulaStr),
+        FM_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(modelFormulaStr),
           family = expressionFamily, epsilon = 1e-1
         ))
       }
@@ -74,9 +75,9 @@ fit_model_helper <- function(x,
         test_res <- tryCatch(
           {
             if (verbose) {
-              FM_fit <- VGAM::vglm(as.formula(modelFormulaStr), family = backup_expression_family, epsilon = 1e-1, checkwz = TRUE)
+              FM_fit <- VGAM::vglm(stats::as.formula(modelFormulaStr), family = backup_expression_family, epsilon = 1e-1, checkwz = TRUE)
             } else {
-              FM_fit <- suppressWarnings(VGAM::vglm(as.formula(modelFormulaStr), family = backup_expression_family, epsilon = 1e-1, checkwz = TRUE))
+              FM_fit <- suppressWarnings(VGAM::vglm(stats::as.formula(modelFormulaStr), family = backup_expression_family, epsilon = 1e-1, checkwz = TRUE))
             }
             FM_fit
           },
@@ -109,7 +110,7 @@ fit_model_helper <- function(x,
 #' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a list of VGAM model objects
-#' @importFrom qlcMatrix rowMax
+#'
 #' @export
 fitModel <- function(cds,
                      modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
@@ -143,11 +144,11 @@ fitModel <- function(cds,
 #' @param newdata a dataframe used to generate new data for interpolation of time points
 #' @param response_type the response desired, as accepted by VGAM's predict function
 #' @param cores number of cores used for calculation
-#' @importFrom parallel detectCores mclapply
+#'
 #' @return a matrix where each row is a vector of response values for a particular feature's model, and columns are cells.
 #' @export
 responseMatrix <- function(models, newdata = NULL, response_type = "response", cores = 1) {
-  res_list <- mclapply(models, function(x) {
+  res_list <- parallel::mclapply(models, function(x) {
     if (is.null(x)) {
       NA
     } else {
@@ -194,9 +195,8 @@ responseMatrix <- function(models, newdata = NULL, response_type = "response", c
 #' @param residual_type the response desired, as accepted by VGAM's predict function
 #' @param cores number of cores used for calculation
 #' @return a matrix where each row is a vector of response values for a particular feature's model, and columns are cells.
-#' @importFrom parallel detectCores mclapply
 residualMatrix <- function(models, residual_type = "response", cores = 1) {
-  res_list <- mclapply(models, function(x) {
+  res_list <- parallel::mclapply(models, function(x) {
     if (is.null(x)) {
       NA
     } else {
@@ -230,7 +230,6 @@ residualMatrix <- function(models, residual_type = "response", cores = 1) {
   res_matrix
 }
 
-
 #' Fit smooth spline curves and return the response matrix
 #'
 #' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
@@ -242,12 +241,12 @@ residualMatrix <- function(models, residual_type = "response", cores = 1) {
 #' @param relative_expr a logic flag to determine whether or not the relative gene expression should be used
 #' @param response_type the response desired, as accepted by VGAM's predict function
 #' @param cores the number of cores to be used while testing each gene for differential expression
-#' @importFrom Biobase fData
+#'
 #' @return a data frame containing the data for the fitted spline curves.
 #' @export
 #'
 genSmoothCurves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
-                            relative_expr = T, response_type = "response", cores = 1) {
+                            relative_expr = TRUE, response_type = "response", cores = 1) {
   expressionFamily <- cds@expressionFamily
 
   if (cores > 1) {
@@ -308,11 +307,10 @@ genSmoothCurves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, d
 #' @param relative_expr a logic flag to determine whether or not the relative gene expression should be used
 #' @param residual_type the response desired, as accepted by VGAM's predict function
 #' @param cores the number of cores to be used while testing each gene for differential expression
-#' @importFrom Biobase pData fData
 #' @return a data frame containing the data for the fitted spline curves.
 #'
 genSmoothCurveResiduals <- function(cds, trend_formula = "~sm.ns(Pseudotime, df = 3)",
-                                    relative_expr = T, residual_type = "response", cores = 1) {
+                                    relative_expr = TRUE, residual_type = "response", cores = 1) {
   expressionFamily <- cds@expressionFamily
 
   if (cores > 1) {
@@ -362,8 +360,6 @@ genSmoothCurveResiduals <- function(cds, trend_formula = "~sm.ns(Pseudotime, df 
   }
 }
 
-
-#' @importFrom stats glm Gamma
 parametricDispersionFit <- function(disp_table, verbose = FALSE, initial_coefs = c(1e-6, 1)) {
   coefs <- initial_coefs
   iter <- 0
@@ -371,15 +367,19 @@ parametricDispersionFit <- function(disp_table, verbose = FALSE, initial_coefs =
     residuals <- disp_table$disp / (coefs[1] + coefs[2] / disp_table$mu)
     good <- disp_table[which((residuals > initial_coefs[1]) & (residuals < 10000)), ]
     if (verbose) {
-      fit <- glm(disp ~ I(1 / mu),
+      fit <- stats::glm(disp ~ I(1 / mu),
         data = good,
-        family = Gamma(link = "identity"), start = coefs
+        family = stats::Gamma(link = "identity"),
+        start = coefs
       )
     } else {
-      suppressWarnings(fit <- glm(disp ~ I(1 / mu),
-        data = good,
-        family = Gamma(link = "identity"), start = coefs
-      ))
+      suppressWarnings(
+        fit <- stats::glm(disp ~ I(1 / mu),
+          data = good,
+          family = stats::Gamma(link = "identity"),
+          start = coefs
+        )
+      )
     }
 
     oldcoefs <- coefs
@@ -395,7 +395,7 @@ parametricDispersionFit <- function(disp_table, verbose = FALSE, initial_coefs =
     }
     iter <- iter + 1
     if (iter > 10) {
-      warning("Dispersion fit did not converge.")
+      log_message("Dispersion fit did not converge.", message_type = "warning")
       break
     }
   }
@@ -417,7 +417,7 @@ parametricDispersionFit <- function(disp_table, verbose = FALSE, initial_coefs =
 #' @param dispModelName The name of the dispersion function to use for VST.
 #' @param expr_matrix An matrix of values to transform. Must be normalized (e.g. by size factors) already. This function doesn't do this for you.
 #' @param round_vals Whether to round expression values to the nearest integer before applying the transformation.
-#' @importFrom BiocGenerics sizeFactors
+#'
 #' @export
 vstExprs <- function(cds, dispModelName = "blind", expr_matrix = NULL, round_vals = TRUE) {
   fitInfo <- cds@dispFitInfo[[dispModelName]]
@@ -431,7 +431,9 @@ vstExprs <- function(cds, dispModelName = "blind", expr_matrix = NULL, round_val
   coefs <- attr(fitInfo$disp_func, "coefficients")
   if (is.null(expr_matrix)) {
     ncounts <- exprs(cds)
-    ncounts <- Matrix::t(Matrix::t(ncounts) / sizeFactors(cds))
+    ncounts <- Matrix::t(
+      Matrix::t(ncounts) / BiocGenerics::sizeFactors(cds)
+    )
     if (round_vals) {
       ncounts <- round(ncounts)
     }
@@ -446,9 +448,8 @@ vstExprs <- function(cds, dispModelName = "blind", expr_matrix = NULL, round_val
   vst(ncounts)
 }
 
-
-#' @importFrom Biobase exprs pData fData
-disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected) {
+disp_calc_helper_NB <- function(
+    cds, expressionFamily, min_cells_detected) {
   rounded <- round(exprs(cds))
   nzGenes <- Matrix::rowSums(rounded > cds@lowerDetectionLimit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
@@ -463,13 +464,11 @@ disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected) {
     f_expression_mean <- Matrix::rowMeans(x)
   }
 
-
   f_expression_var <- Matrix::rowMeans((x - f_expression_mean)^2)
 
   disp_guess_meth_moments <- f_expression_var - xim * f_expression_mean
 
   disp_guess_meth_moments <- disp_guess_meth_moments / (f_expression_mean^2)
-
 
   res <- data.frame(mu = as.vector(f_expression_mean), disp = as.vector(disp_guess_meth_moments))
   res[res$mu == 0]$mu <- NA
@@ -481,36 +480,67 @@ disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected) {
 }
 
 #' Helper function to estimate dispersions
-#' @importFrom Biobase pData
-#' @importFrom stats cooks.distance
-#' @importFrom stringr str_split str_trim
-#' @importFrom dplyr %>%
-#' @importFrom rlang syms
-#' @importFrom tibble rownames_to_column
+#'
 #' @param cds a CellDataSet that contains all cells user wants evaluated
 #' @param modelFormulaStr a formula string specifying the model to fit for the genes.
 #' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
 #' @param removeOutliers a boolean it determines whether or not outliers from the data should be removed
 #' @param verbose Whether to show detailed running information.
-estimateDispersionsForCellDataSet <- function(cds, modelFormulaStr, relative_expr, min_cells_detected, removeOutliers, verbose = FALSE) {
+estimateDispersionsForCellDataSet <- function(
+    cds,
+    modelFormulaStr,
+    relative_expr,
+    min_cells_detected,
+    removeOutliers,
+    verbose = FALSE) {
   if (!(("negbinomial" == cds@expressionFamily@vfamily) || ("negbinomial.size" == cds@expressionFamily@vfamily))) {
     stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
   }
 
   mu <- NA
-  model_terms <- unlist(lapply(str_split(modelFormulaStr, "~|\\+|\\*"), str_trim))
+  model_terms <- unlist(
+    lapply(
+      stringr::str_split(
+        modelFormulaStr, "~|\\+|\\*"
+      ), stringr::str_trim
+    )
+  )
   model_terms <- model_terms[model_terms != ""]
   progress_opts <- options()$dplyr.show_progress
-  options(dplyr.show_progress = T)
+  options(dplyr.show_progress = verbose)
 
   if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")) {
-      cds_pdata <- dplyr::group_by(dplyr::select(tibble::rownames_to_column(pData(cds)), rowname, !!!rlang::syms(model_terms)), !!!rlang::syms(model_terms))
-      disp_table <- as.data.frame(cds_pdata %>% do(disp_calc_helper_NB(cds[, .$rowname], cds@expressionFamily, min_cells_detected)))
+      cds_pdata <- dplyr::group_by(
+        dplyr::select(
+          tibble::rownames_to_column(
+            pData(cds)
+          ), rowname, !!!rlang::syms(model_terms)
+        ), !!!rlang::syms(model_terms)
+      )
+      disp_table <- as.data.frame(
+        cds_pdata %>% dplyr::do(
+          disp_calc_helper_NB(
+            cds[, .$rowname],
+            cds@expressionFamily,
+            min_cells_detected
+          )
+        )
+      )
     } else {
-      cds_pdata <- dplyr::group_by(dplyr::select(tibble::rownames_to_column(pData(cds)), rowname))
-      disp_table <- as.data.frame(cds_pdata %>% do(disp_calc_helper_NB(cds[, .$rowname], cds@expressionFamily, min_cells_detected)))
+      cds_pdata <- dplyr::group_by(
+        dplyr::select(tibble::rownames_to_column(pData(cds)), rowname)
+      )
+      disp_table <- as.data.frame(
+        cds_pdata %>% dplyr::do(
+          disp_calc_helper_NB(
+            cds[, .$rowname],
+            cds@expressionFamily,
+            min_cells_detected
+          )
+        )
+      )
     }
 
     if (!is.list(disp_table)) {
@@ -521,11 +551,17 @@ estimateDispersionsForCellDataSet <- function(cds, modelFormulaStr, relative_exp
     fit <- res[[1]]
     coefs <- res[[2]]
     if (removeOutliers) {
-      CD <- cooks.distance(fit)
+      CD <- stats::cooks.distance(fit)
       cooksCutoff <- 4 / nrow(disp_table)
-      message(paste("Removing", length(CD[CD > cooksCutoff]), "outliers"))
-      outliers <- union(names(CD[CD > cooksCutoff]), setdiff(row.names(disp_table), names(CD)))
-      res <- parametricDispersionFit(disp_table[row.names(disp_table) %in% outliers == FALSE, ], verbose)
+      log_message(
+        "Removing {.val {length(CD[CD > cooksCutoff])}} outliers"
+      )
+      outliers <- union(
+        names(CD[CD > cooksCutoff]), setdiff(row.names(disp_table), names(CD))
+      )
+      res <- parametricDispersionFit(
+        disp_table[row.names(disp_table) %in% outliers == FALSE, ], verbose
+      )
       fit <- res[[1]]
       coefs <- res[[2]]
     }
@@ -540,13 +576,12 @@ estimateDispersionsForCellDataSet <- function(cds, modelFormulaStr, relative_exp
   return(res)
 }
 
-#' @importFrom stats var
 calculate_NB_dispersion_hint <- function(disp_func, f_expression, expr_selection_func = mean) {
   expr_hint <- expr_selection_func(f_expression)
   if (expr_hint > 0 && is.null(expr_hint) == FALSE) {
     disp_guess_fit <- disp_func(expr_hint)
 
-    f_expression_var <- var(f_expression)
+    f_expression_var <- stats::var(f_expression)
     f_expression_mean <- mean(f_expression)
 
     disp_guess_meth_moments <- f_expression_var - f_expression_mean
@@ -557,19 +592,21 @@ calculate_NB_dispersion_hint <- function(disp_func, f_expression, expr_selection
   return(NULL)
 }
 
-#' @importFrom stats var
-calculate_QP_dispersion_hint <- function(disp_func, f_expression, expr_selection_func = mean) {
+calculate_QP_dispersion_hint <- function(
+    disp_func, f_expression, expr_selection_func = mean) {
   expr_hint <- expr_selection_func(f_expression)
   if (expr_hint > 0 && is.null(expr_hint) == FALSE) {
     disp_guess_fit <- disp_func(expr_hint)
 
-    f_expression_var <- var(f_expression)
+    f_expression_var <- stats::var(f_expression)
     f_expression_mean <- mean(f_expression)
 
     disp_guess_meth_moments <- f_expression_var - f_expression_mean
     disp_guess_meth_moments <- disp_guess_meth_moments / (f_expression_mean^2)
 
-    return(1 + f_expression_mean * max(disp_guess_fit, disp_guess_meth_moments))
+    return(
+      1 + f_expression_mean * max(disp_guess_fit, disp_guess_meth_moments)
+    )
   }
   return(NULL)
 }

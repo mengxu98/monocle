@@ -6,8 +6,7 @@
 #' @param lowerDetectionLimit the minimum expression level that consistitutes true expression
 #' @param expressionFamily the VGAM family function to be used for expression response variables
 #' @return a new CellDataSet object
-#' @import VGAM
-#' @importFrom Biobase annotatedDataFrameFrom assayDataNew
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -19,13 +18,14 @@
 #' fd <- new("AnnotatedDataFrame", data = gene_annotations_small)
 #' HSMM <- new("CellDataSet", exprs = as.matrix(fpkm_matrix_small), phenoData = pd, featureData = fd)
 #' }
-newCellDataSet <- function(cellData,
-                           phenoData = NULL,
-                           featureData = NULL,
-                           lowerDetectionLimit = 0.1,
-                           expressionFamily = VGAM::negbinomial.size()) {
+newCellDataSet <- function(
+    cellData,
+    phenoData = NULL,
+    featureData = NULL,
+    lowerDetectionLimit = 0.1,
+    expressionFamily = VGAM::negbinomial.size()) {
   if (!("gene_short_name" %in% colnames(featureData))) {
-    warning("Warning: featureData must contain a column verbatim named 'gene_short_name' for certain functions")
+    log_message("featureData must contain a column verbatim named 'gene_short_name' for certain functions", message_type = "warning")
   }
 
   if (!inherits(cellData, "matrix") && isSparseMatrix(cellData) == FALSE) {
@@ -33,27 +33,26 @@ newCellDataSet <- function(cellData,
   }
 
   if (!("gene_short_name" %in% colnames(featureData))) {
-    warning("Warning: featureData must contain a column verbatim named 'gene_short_name' for certain functions")
+    log_message("featureData must contain a column verbatim named 'gene_short_name' for certain functions", message_type = "warning")
   }
 
   sizeFactors <- rep(NA_real_, ncol(cellData))
 
-
   if (is.null(phenoData)) {
-    phenoData <- annotatedDataFrameFrom(cellData, byrow = FALSE)
+    phenoData <- Biobase::annotatedDataFrameFrom(cellData, byrow = FALSE)
   }
   if (is.null(featureData)) {
-    featureData <- annotatedDataFrameFrom(cellData, byrow = TRUE)
+    featureData <- Biobase::annotatedDataFrameFrom(cellData, byrow = TRUE)
   }
 
   if (!("gene_short_name" %in% colnames(featureData))) {
-    warning("Warning: featureData must contain a column verbatim named 'gene_short_name' for certain functions")
+    log_message("featureData must contain a column verbatim named 'gene_short_name' for certain functions", message_type = "warning")
   }
 
   phenoData$`Size_Factor` <- sizeFactors
 
   cds <- new("CellDataSet",
-    assayData = assayDataNew("environment", exprs = cellData),
+    assayData = Biobase::assayDataNew("environment", exprs = cellData),
     phenoData = phenoData,
     featureData = featureData,
     lowerDetectionLimit = lowerDetectionLimit,
@@ -65,7 +64,8 @@ newCellDataSet <- function(cellData,
   cds
 }
 
-sparseApply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...) {
+sparseApply <- function(
+    Sp_X, MARGIN, FUN, convert_to_dense, ...) {
   if (convert_to_dense) {
     if (MARGIN == 1) {
       Sp_X <- Matrix::t(Sp_X)
@@ -93,19 +93,20 @@ sparseApply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...) {
   return(res)
 }
 
-#' @importFrom parallel splitIndices
 splitRows <- function(x, ncl) {
-  lapply(splitIndices(nrow(x), ncl), function(i) x[i, , drop = FALSE])
+  lapply(
+    parallel::splitIndices(nrow(x), ncl), function(i) x[i, , drop = FALSE]
+  )
 }
 
-#' @importFrom parallel splitIndices
 splitCols <- function(x, ncl) {
-  lapply(splitIndices(ncol(x), ncl), function(i) x[, i, drop = FALSE])
+  lapply(
+    parallel::splitIndices(ncol(x), ncl), function(i) x[, i, drop = FALSE]
+  )
 }
 
-#' @importFrom parallel clusterApply
 sparseParRApply <- function(cl, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, clusterApply(
+  par_res <- do.call(c, parallel::clusterApply(
     cl = cl, x = splitRows(x, length(cl)),
     fun = sparseApply, MARGIN = 1L, FUN = FUN, convert_to_dense = convert_to_dense, ...
   ), quote = TRUE)
@@ -113,16 +114,14 @@ sparseParRApply <- function(cl, x, FUN, convert_to_dense, ...) {
   par_res
 }
 
-#' @importFrom parallel clusterApply
 sparseParCApply <- function(cl = NULL, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, clusterApply(
+  par_res <- do.call(c, parallel::clusterApply(
     cl = cl, x = splitCols(x, length(cl)),
     fun = sparseApply, MARGIN = 2L, FUN = FUN, convert_to_dense = convert_to_dense, ...
   ), quote = TRUE)
   names(par_res) <- colnames(x)
   par_res
 }
-
 
 #' Multicore apply-like function for CellDataSet
 #'
@@ -138,33 +137,27 @@ sparseParCApply <- function(cl = NULL, x, FUN, convert_to_dense, ...) {
 #' @param cores The number of cores to use for evaluation
 #'
 #' @return The result of with(pData(X) apply(exprs(X)), MARGIN, FUN, ...))
-#' @importFrom parallel makeCluster stopCluster clusterCall parRapply parCapply
-#' @importFrom Biobase pData exprs multiassign
+#'
 #' @export
-mcesApply <- function(X, MARGIN, FUN, required_packages, cores = 1, convert_to_dense = TRUE, ...) {
+mcesApply <- function(
+    X, MARGIN, FUN, required_packages, cores = 1, convert_to_dense = TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent)) {
     parent <- emptyenv()
   }
   e1 <- new.env(parent = parent)
-  multiassign(names(pData(X)), pData(X), envir = e1)
+  Biobase::multiassign(names(pData(X)), pData(X), envir = e1)
   environment(FUN) <- e1
 
-  platform <- Sys.info()[["sysname"]]
-  if (platform == "Windows") {
-    cl <- makeCluster(cores)
-  }
-  if (platform %in% c("Linux", "Darwin")) {
-    cl <- makeCluster(cores)
-  }
+  cl <- parallel::makeCluster(cores)
 
   cleanup <- function() {
-    stopCluster(cl)
+    parallel::stopCluster(cl)
   }
   on.exit(cleanup)
 
   if (is.null(required_packages) == FALSE) {
-    clusterCall(cl, function(pkgs) {
+    parallel::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
         library(req, character.only = TRUE)
       }
@@ -179,14 +172,14 @@ mcesApply <- function(X, MARGIN, FUN, required_packages, cores = 1, convert_to_d
   res
 }
 
-#' @importFrom Biobase multiassign
-smartEsApply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
+smartEsApply <- function(
+    X, MARGIN, FUN, convert_to_dense, ...) {
   parent <- environment(FUN)
   if (is.null(parent)) {
     parent <- emptyenv()
   }
   e1 <- new.env(parent = parent)
-  multiassign(names(pData(X)), pData(X), envir = e1)
+  Biobase::multiassign(names(pData(X)), pData(X), envir = e1)
   environment(FUN) <- e1
 
   if (isSparseMatrix(exprs(X))) {
@@ -204,7 +197,6 @@ smartEsApply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   res
 }
 
-
 #' Retrieve a table of values specifying the mean-variance relationship
 #'
 #' Calling estimateDispersions computes a smooth function describing how variance
@@ -219,10 +211,9 @@ smartEsApply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
 #' @export
 dispersionTable <- function(cds) {
   if (is.null(cds@dispFitInfo[["blind"]])) {
-    warning("Warning: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
+    log_message("estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family", message_type = "warning")
     stop("Error: no dispersion model found. Please call estimateDispersions() before calling this function")
   }
-
 
   disp_df <- data.frame(
     gene_id = cds@dispFitInfo[["blind"]]$disp_table$gene_id,
@@ -243,7 +234,6 @@ dispersionTable <- function(cds) {
 #' @param cds the CellDataSet upon which to perform this operation
 #' @param min_expr the expression threshold
 #' @return an updated CellDataSet object
-#' @importFrom Biobase fData fData<- exprs pData pData<-
 #' @export
 #' @examples
 #' \dontrun{
@@ -259,8 +249,6 @@ detectGenes <- function(cds, min_expr = NULL) {
   cds
 }
 
-#' @import slam
-#' @import Matrix
 asSparseMatrix <- function(simpleTripletMatrix) {
   retVal <- sparseMatrix(
     i = simpleTripletMatrix[["i"]],
@@ -277,23 +265,20 @@ asSparseMatrix <- function(simpleTripletMatrix) {
   return(retVal)
 }
 
-#' @import slam
 asSlamMatrix <- function(sp_mat) {
   sp <- Matrix::summary(sp_mat)
   simple_triplet_matrix(sp[, "i"], sp[, "j"], sp[, "x"], ncol = ncol(sp_mat), nrow = nrow(sp_mat), dimnames = dimnames(sp_mat))
 }
 
-#' @import Matrix
 isSparseMatrix <- function(x) {
   any(class(x) %in% c("dgCMatrix", "dgTMatrix"))
 }
 
-#' @import slam
-#' @importFrom stats median
-estimateSizeFactorsForSparseMatrix <- function(counts,
-                                               locfunc = median,
-                                               round_exprs = TRUE,
-                                               method = "mean-geometric-mean-total") {
+estimateSizeFactorsForSparseMatrix <- function(
+    counts,
+    locfunc = median,
+    round_exprs = TRUE,
+    method = "mean-geometric-mean-total") {
   CM <- counts
   if (round_exprs) {
     CM <- round(CM)
@@ -343,8 +328,11 @@ estimateSizeFactorsForSparseMatrix <- function(counts,
   sfs
 }
 
-#' @importFrom stats median
-estimateSizeFactorsForDenseMatrix <- function(counts, locfunc = median, round_exprs = TRUE, method = "mean-geometric-mean-total") {
+estimateSizeFactorsForDenseMatrix <- function(
+    counts,
+    locfunc = median,
+    round_exprs = TRUE,
+    method = "mean-geometric-mean-total") {
   CM <- counts
   if (round_exprs) {
     CM <- round(CM)
@@ -391,26 +379,34 @@ estimateSizeFactorsForDenseMatrix <- function(counts, locfunc = median, round_ex
   sfs
 }
 
-
-
 #' Function to calculate the size factor for the single-cell RNA-seq data
 #'
-#'  @importFrom stats median
 #' @param counts The matrix for the gene expression data, either read counts or FPKM values or transcript counts
 #' @param locfunc The location function used to find the representive value
 #' @param round_exprs A logic flag to determine whether or not the expression value should be rounded
 #' @param method A character to specify the size factor calculation appraoches. It can be either "mean-geometric-mean-total" (default),
 #' "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
-#'
-estimateSizeFactorsForMatrix <- function(counts, locfunc = median, round_exprs = TRUE, method = "mean-geometric-mean-total") {
+estimateSizeFactorsForMatrix <- function(
+    counts,
+    locfunc = median,
+    round_exprs = TRUE,
+    method = "mean-geometric-mean-total") {
   if (isSparseMatrix(counts)) {
-    estimateSizeFactorsForSparseMatrix(counts, locfunc = locfunc, round_exprs = round_exprs, method = method)
+    estimateSizeFactorsForSparseMatrix(
+      counts,
+      locfunc = locfunc,
+      round_exprs = round_exprs,
+      method = method
+    )
   } else {
-    estimateSizeFactorsForDenseMatrix(counts, locfunc = locfunc, round_exprs = round_exprs, method = method)
+    estimateSizeFactorsForDenseMatrix(
+      counts,
+      locfunc = locfunc,
+      round_exprs = round_exprs,
+      method = method
+    )
   }
 }
-
-
 
 #' Return the names of classic muscle genes
 #'
@@ -431,17 +427,15 @@ get_classic_muscle_markers <- function() {
 #' @description Creates a cellDataSet using the data from the
 #' HSMMSingleCell package.
 #'
-#' @import HSMMSingleCell
-#' @importFrom utils data
 #' @export
 load_HSMM <- function() {
   HSMM_sample_sheet <- NA
   HSMM_gene_annotation <- NA
   HSMM_expr_matrix <- NA
   gene_short_name <- NA
-  data(HSMM_expr_matrix, envir = environment())
-  data(HSMM_gene_annotation, envir = environment())
-  data(HSMM_sample_sheet, envir = environment())
+  utils::data(HSMM_expr_matrix, envir = environment())
+  utils::data(HSMM_gene_annotation, envir = environment())
+  utils::data(HSMM_sample_sheet, envir = environment())
   pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
   fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
   HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix), phenoData = pd, featureData = fd)
@@ -452,7 +446,6 @@ load_HSMM <- function() {
 }
 
 #' Return a CellDataSet of classic muscle genes.
-#' @importFrom Biobase fData
 #' @return A CellDataSet object
 #' @export
 load_HSMM_markers <- function() {
@@ -463,7 +456,6 @@ load_HSMM_markers <- function() {
 }
 
 #' Build a CellDataSet from the data stored in inst/extdata directory.
-#' @importFrom Biobase pData pData<- exprs fData
 #' @export
 load_lung <- function() {
   lung_phenotype_data <- NA
