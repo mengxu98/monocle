@@ -80,7 +80,7 @@ HSMM <- clusterCells(HSMM,
 marker_diff <- markerDiffTable(HSMM[expressed_genes, ],
   cth,
   residualModelFormulaStr = "~Media + num_genes_expressed",
-  cores = detectCores()
+  cores = parallel::detectCores()
 )
 
 set.seed(0)

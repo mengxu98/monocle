@@ -23,6 +23,7 @@
   min_cells_detected = 1,
   remove_outliers = TRUE,
   cores = 1,
+  verbose = FALSE,
   ...
 )
 }
@@ -45,6 +46,8 @@ The default groups all cells together.}
 \item{remove_outliers}{Whether to remove outliers (using Cook's distance) when estimating dispersions}
 
 \item{cores}{The number of cores to use for computing dispersions}
+
+\item{verbose}{Whether to show dispersion fitting warnings and progress}
 }
 \description{
 Methods for the CellDataSet class

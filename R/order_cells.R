@@ -738,22 +738,33 @@ extract_ddrtree_ordering <- function(cds, root_cell, verbose = T) {
   parents <- rep(NA, ncol(dp))
   names(parents) <- V(dp_mst)$name
 
-  mst_traversal <- igraph::dfs(
-    dp_mst,
-    root = root_cell,
-    mode = "all",
-    unreachable = FALSE,
-    father = TRUE
-  )
-  mst_traversal$father <- as.numeric(mst_traversal$father)
+  if ("parent" %in% names(formals(igraph::dfs))) {
+    mst_traversal <- igraph::dfs(
+      dp_mst,
+      root = root_cell,
+      mode = "all",
+      unreachable = FALSE,
+      parent = TRUE
+    )
+    mst_parent <- as.numeric(mst_traversal$parent)
+  } else {
+    mst_traversal <- igraph::dfs(
+      dp_mst,
+      root = root_cell,
+      mode = "all",
+      unreachable = FALSE,
+      father = TRUE
+    )
+    mst_parent <- as.numeric(mst_traversal$father)
+  }
   curr_state <- 1
 
   for (i in 1:length(mst_traversal$order)) {
     curr_node <- mst_traversal$order[i]
     curr_node_name <- V(dp_mst)[curr_node]$name
 
-    if (is.na(mst_traversal$father[curr_node]) == FALSE) {
-      parent_node <- mst_traversal$father[curr_node]
+    if (is.na(mst_parent[curr_node]) == FALSE) {
+      parent_node <- mst_parent[curr_node]
       parent_node_name <- V(dp_mst)[parent_node]$name
       parent_node_pseudotime <- pseudotimes[parent_node_name]
       parent_node_state <- states[parent_node_name]
@@ -1421,7 +1432,7 @@ project_point_to_line_segment <- function(p, df) {
 }
 
 traverseTree <- function(g, starting_cell, end_cells) {
-  distance <- igraph::shortest.paths(g, v = starting_cell, to = end_cells)
+  distance <- igraph::distances(g, v = starting_cell, to = end_cells)
   branchPoints <- which(igraph::degree(g) == 3)
   path <- igraph::shortest_paths(g, from = starting_cell, end_cells)
 

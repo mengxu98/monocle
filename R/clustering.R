@@ -317,7 +317,7 @@ clusterCells <- function(
 #'   #perform DEG test across clusters:
 #'   cds@expressionFamily <- negbinomial.size()
 #'   pData(cds)$Cluster <- factor(pData(cds)$Cluster)
-#'   clustering_DEG_genes <- differentialGeneTest(cds, fullModelFormulaStr = '~Cluster', cores = detectCores() - 2)
+#'   clustering_DEG_genes <- differentialGeneTest(cds, fullModelFormulaStr = '~Cluster', cores = parallel::detectCores() - 2)
 #'   clustering_DEG_genes_subset <- lung_clustering_DEG_genes[fData(cds)$num_cells_expressed > num_cells_expressed, ]
 #'
 #'   #use all DEG gene from the clusters

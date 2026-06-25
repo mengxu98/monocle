@@ -141,7 +141,7 @@ classifyCellsHelperCell <- function(cds, cth) {
 #' @export
 newCellTypeHierarchy <- function() {
   cth <- new("CellTypeHierarchy",
-    classificationTree = igraph::graph.empty()
+    classificationTree = igraph::make_empty_graph()
   )
 
   root_node_id <- "root"

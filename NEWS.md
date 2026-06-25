@@ -1,5 +1,13 @@
 # monocle
 
+# monocle 2.9.2
+
+* **bugs**:
+  * Replaced deprecated igraph APIs used by trajectory ordering and plotting, including `dfs(father = TRUE)`, `shortest.paths()`, `graph.empty()`, and `get.edgelist()`.
+  * Fixed `estimateDispersions()` argument forwarding so dispersion fitting warnings are suppressed by default unless `verbose = TRUE`.
+  * Replaced remaining `ggplot2::aes_string()` usages in plotting code with tidy-evaluation mappings.
+  * Updated tests to use current message expectations, explicit test data loading, and namespaced `parallel::detectCores()`.
+
 # monocle 2.9.0
 
 * **bugs**:
@@ -78,4 +86,3 @@
 
 * **bugs**:
   * `responseMatrix()`: Fixed bug that occurs when you don't have any genes that fail VGAM fitting.
-

@@ -47,11 +47,12 @@ setMethod(
 #' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
 #' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
 #' @param cores The number of cores to use for computing dispersions
+#' @param verbose Whether to show dispersion fitting warnings and progress
 #' @aliases CellDataSet,ANY,ANY-method
 setMethod(
   "estimateDispersions",
   signature(object = "CellDataSet"),
-  function(object, modelFormulaStr = "~ 1", relative_expr = TRUE, min_cells_detected = 1, remove_outliers = TRUE, cores = 1, ...) {
+  function(object, modelFormulaStr = "~ 1", relative_expr = TRUE, min_cells_detected = 1, remove_outliers = TRUE, cores = 1, verbose = FALSE, ...) {
     dispModelName <- "blind"
     stopifnot(is(object, "CellDataSet"))
 
@@ -70,12 +71,12 @@ setMethod(
     object@dispFitInfo <- new.env(hash = TRUE)
 
     dfi <- estimateDispersionsForCellDataSet(
-      object,
-      modelFormulaStr,
-      relative_expr,
-      min_cells_detected,
-      remove_outliers,
-      cores
+      cds = object,
+      modelFormulaStr = modelFormulaStr,
+      relative_expr = relative_expr,
+      min_cells_detected = min_cells_detected,
+      removeOutliers = remove_outliers,
+      verbose = verbose
     )
     object@dispFitInfo[[dispModelName]] <- dfi
 

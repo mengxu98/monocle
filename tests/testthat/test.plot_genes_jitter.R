@@ -2,6 +2,10 @@ library(monocle)
 library(HSMMSingleCell)
 context("plot_genes_jitter functions properly")
 
+data(HSMM_expr_matrix)
+data(HSMM_gene_annotation)
+data(HSMM_sample_sheet)
+
 pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
 fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
 
@@ -72,7 +76,7 @@ HSMM <- clusterCells(HSMM,
 marker_diff <- markerDiffTable(HSMM[expressed_genes, ],
   cth,
   residualModelFormulaStr = "~Media + num_genes_expressed",
-  cores = detectCores()
+  cores = parallel::detectCores()
 )
 
 set.seed(0)
