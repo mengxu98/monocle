@@ -1173,9 +1173,7 @@ reduceDimension <- function(
 
   FM <- normalize_expr_data(cds, norm_method, pseudo_expr)
 
-  xm <- Matrix::rowMeans(FM)
-  xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
-  FM <- FM[xsd > 0, ]
+  FM <- FM[row_mean_var(FM)$var > 0, ]
 
   if (is.null(residualModelFormulaStr) == FALSE) {
     log_message("Removing batch effects", verbose = verbose)
@@ -1500,9 +1498,7 @@ reverseEmbeddingCDS <- function(cds) {
 
   FM <- normalize_expr_data(cds, norm_method = "log")
 
-  xm <- Matrix::rowMeans(FM)
-  xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
-  FM <- FM[xsd > 0, ]
+  FM <- FM[row_mean_var(FM)$var > 0, ]
 
   reverse_embedding_data <- reducedDimW(cds) %*% reducedDimS(cds)
   row.names(reverse_embedding_data) <- row.names(FM)

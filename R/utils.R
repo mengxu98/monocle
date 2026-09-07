@@ -271,7 +271,18 @@ asSlamMatrix <- function(sp_mat) {
 }
 
 isSparseMatrix <- function(x) {
-  any(class(x) %in% c("dgCMatrix", "dgTMatrix"))
+  inherits(x, "sparseMatrix")
+}
+
+# Row means and variances without materializing (x - mean), which densifies
+# sparse matrices and overflows R's 32-bit TsparseMatrix index limit when
+# nrow * ncol > 2^31 - 1. E[X^2] - mu^2 is algebraically equal to mean((X - mu)^2).
+row_mean_var <- function(x) {
+  mu <- as.numeric(Matrix::rowMeans(x))
+  second <- as.numeric(Matrix::rowMeans(x * x))
+  var <- second - mu * mu
+  var[var < 0] <- 0
+  list(mean = mu, var = var)
 }
 
 estimateSizeFactorsForSparseMatrix <- function(

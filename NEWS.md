@@ -1,5 +1,14 @@
 # monocle
 
+# monocle 2.9.3
+
+* **bugs**:
+  * `estimateDispersions()`, `reduceDimension()`, and related row-variance
+    calculations no longer convert sparse expression matrices to dense
+    `TsparseMatrix` objects via `(x - rowMeans(x))^2`. That path overflows R's
+    32-bit index limit when `nrow * ncol` exceeds `2^31 - 1`. Variance is now
+    `E[X^2] - mean(X)^2`, which stays sparse.
+
 # monocle 2.9.2
 
 * **bugs**:
