@@ -69,3 +69,43 @@ test_that("estimateDispersion() properly validates its input", {
   expect_true(all(lung_pData$num_genes_expressed >= 10))
   expect_true(all(lung_pData$num_genes_expressed <= 196))
 })
+
+test_that("row_mean_var matches densifying row variance without filling zeros", {
+  set.seed(1)
+  x <- Matrix::rsparsematrix(20, 15, density = 0.2)
+  x <- abs(x)
+  densifying_var <- as.numeric(Matrix::rowMeans((as.matrix(x) - Matrix::rowMeans(as.matrix(x)))^2))
+  sparse_var <- row_mean_var(x)$var
+  expect_equal(sparse_var, densifying_var, tolerance = 1e-10)
+  expect_lt(Matrix::nnzero(x * x), prod(dim(x)))
+})
+
+test_that("disp_calc_helper_NB agrees for sparse and dense count matrices", {
+  set.seed(1)
+  n_genes <- 40
+  n_cells <- 30
+  counts <- matrix(
+    rnbinom(n_genes * n_cells, mu = 5, size = 1),
+    nrow = n_genes,
+    dimnames = list(paste0("g", seq_len(n_genes)), paste0("c", seq_len(n_cells)))
+  )
+  fd <- data.frame(gene_short_name = rownames(counts), row.names = rownames(counts))
+  pd <- data.frame(row.names = colnames(counts))
+  make_cds <- function(mat) {
+    cds <- newCellDataSet(
+      mat,
+      phenoData = Biobase::AnnotatedDataFrame(pd),
+      featureData = Biobase::AnnotatedDataFrame(fd),
+      expressionFamily = VGAM::negbinomial.size()
+    )
+    estimateSizeFactors(cds)
+  }
+
+  cds_dense <- make_cds(counts)
+  cds_sparse <- make_cds(Matrix::Matrix(counts, sparse = TRUE))
+  expect_equal(
+    disp_calc_helper_NB(cds_sparse, cds_sparse@expressionFamily, 1),
+    disp_calc_helper_NB(cds_dense, cds_dense@expressionFamily, 1),
+    tolerance = 1e-8
+  )
+})

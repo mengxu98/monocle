@@ -458,13 +458,9 @@ disp_calc_helper_NB <- function(
 
   xim <- mean(1 / pData(cds[nzGenes, ])$Size_Factor)
 
-  if (isSparseMatrix(exprs(cds))) {
-    f_expression_mean <- as(Matrix::rowMeans(x), "sparseVector")
-  } else {
-    f_expression_mean <- Matrix::rowMeans(x)
-  }
-
-  f_expression_var <- Matrix::rowMeans((x - f_expression_mean)^2)
+  moments <- row_mean_var(x)
+  f_expression_mean <- moments$mean
+  f_expression_var <- moments$var
 
   disp_guess_meth_moments <- f_expression_var - xim * f_expression_mean
 
