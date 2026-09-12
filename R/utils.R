@@ -156,6 +156,10 @@ mcesApply <- function(
   }
   on.exit(cleanup)
 
+  parallel::clusterCall(cl, function(paths) {
+    .libPaths(paths)
+  }, .libPaths())
+
   if (is.null(required_packages) == FALSE) {
     parallel::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
@@ -283,6 +287,97 @@ row_mean_var <- function(x) {
   var <- second - mu * mu
   var[var < 0] <- 0
   list(mean = mu, var = var)
+}
+
+is_negbinomial_cds <- function(cds) {
+  cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")
+}
+
+nb_family_label <- function(cds) {
+  fam <- cds@expressionFamily@vfamily
+  if (length(fam) > 1) {
+    fam <- fam[[1]]
+  }
+  as.character(fam)
+}
+
+nb_num_threads <- function(cores = 1) {
+  n <- suppressWarnings(as.integer(cores)[1])
+  if (length(n) != 1L || is.na(n) || n < 1L) {
+    1L
+  } else {
+    n
+  }
+}
+
+nb_size_factors <- function(cds, relative_expr) {
+  if (isTRUE(relative_expr) && !is.null(BiocGenerics::sizeFactors(cds))) {
+    as.numeric(BiocGenerics::sizeFactors(cds))
+  } else {
+    numeric(0)
+  }
+}
+
+nb_dispersion_guesses <- function(cds) {
+  n <- nrow(cds)
+  disp_func <- cds@dispFitInfo[["blind"]]$disp_func
+  if (is.null(disp_func)) {
+    return(numeric(n))
+  }
+  gene_means <- as.numeric(Matrix::rowMeans(round(exprs(cds))))
+  disp_guesses <- numeric(n)
+  ok <- is.finite(gene_means) & gene_means > 0
+  if (!any(ok)) {
+    return(disp_guesses)
+  }
+  val <- tryCatch(
+    as.numeric(disp_func(gene_means[ok])),
+    error = function(e) rep(NA_real_, sum(ok))
+  )
+  if (length(val) == 1L && sum(ok) > 1L) {
+    val <- rep(val, sum(ok))
+  }
+  if (length(val) != sum(ok)) {
+    return(disp_guesses)
+  }
+  val[!is.finite(val) | val < 0] <- 0
+  disp_guesses[ok] <- val
+  disp_guesses
+}
+
+nb_formula_for_lm <- function(formula_str) {
+  gsub("sm\\.ns\\s*\\(", "splines::ns(", formula_str)
+}
+
+nb_design_matrix <- function(formula_str, pd) {
+  stats::model.matrix(stats::as.formula(formula_str), data = pd)
+}
+
+nb_design_for_newdata <- function(formula_str, train_pd, new_pd) {
+  f <- nb_formula_for_lm(formula_str)
+  train_pd <- as.data.frame(train_pd)
+  new_pd <- as.data.frame(new_pd)
+  train_pd[[".monocle_y."]] <- 1
+  dummy <- stats::lm(stats::as.formula(paste0(".monocle_y. ", f)), data = train_pd)
+  X_fit <- stats::model.matrix(dummy)
+  tt <- stats::delete.response(stats::terms(dummy))
+  mf <- stats::model.frame(tt, data = new_pd, xlev = dummy$xlevels, na.action = stats::na.pass)
+  X_new <- stats::model.matrix(tt, mf, contrasts.arg = dummy$contrasts)
+  if (ncol(X_new) != ncol(X_fit) || !identical(colnames(X_new), colnames(X_fit))) {
+    stop("newdata design matrix does not match the training design")
+  }
+  if (anyNA(X_fit) || anyNA(X_new)) {
+    stop("design matrix contains NA values")
+  }
+  list(X_fit = X_fit, X_new = X_new)
+}
+
+fast_nb_cpp_call <- function(cds, sparse_fun, dense_fun, ...) {
+  if (isSparseMatrix(exprs(cds))) {
+    sparse_fun(Matrix::t(exprs(cds)), ...)
+  } else {
+    dense_fun(thisutils::as_matrix(exprs(cds)), ...)
+  }
 }
 
 estimateSizeFactorsForSparseMatrix <- function(

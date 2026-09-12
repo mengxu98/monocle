@@ -79,7 +79,7 @@ clusterGenes <- function(
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
 #' @references Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
 #'
-#' @useDynLib monocle
+#' @useDynLib monocle, .registration = TRUE
 #'
 #' @export
 clusterCells <- function(

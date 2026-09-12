@@ -154,32 +154,74 @@ differentialGeneTest <- function(cds,
     }
   }
 
-  if (cores > 1) {
-    diff_test_res <- mcesApply(cds, 1, diff_test_helper,
-      c("BiocGenerics", "VGAM", "Matrix"),
-      cores = cores,
-      fullModelFormulaStr = fullModelFormulaStr,
-      reducedModelFormulaStr = reducedModelFormulaStr,
-      expressionFamily = cds@expressionFamily,
-      relative_expr = relative_expr,
-      disp_func = cds@dispFitInfo[["blind"]]$disp_func,
-      verbose = verbose
-    )
-    diff_test_res
-  } else {
-    diff_test_res <- smartEsApply(cds, 1, diff_test_helper,
-      convert_to_dense = TRUE,
-      fullModelFormulaStr = fullModelFormulaStr,
-      reducedModelFormulaStr = reducedModelFormulaStr,
-      expressionFamily = cds@expressionFamily,
-      relative_expr = relative_expr,
-      disp_func = cds@dispFitInfo[["blind"]]$disp_func,
-      verbose = verbose
-    )
-    diff_test_res
+  use_fast_cpp <- is_negbinomial_cds(cds)
+  diff_test_res <- NULL
+
+  if (use_fast_cpp) {
+    try_cpp <- tryCatch({
+      pd <- pData(cds)
+      X_full <- nb_design_matrix(fullModelFormulaStr, pd)
+      X_red <- nb_design_matrix(reducedModelFormulaStr, pd)
+      if (nrow(X_full) != ncol(cds) || nrow(X_red) != ncol(cds)) {
+        stop("design matrix rows do not match the number of cells")
+      }
+
+      disp_guesses <- nb_dispersion_guesses(cds)
+      sf <- nb_size_factors(cds, relative_expr)
+      num_threads <- nb_num_threads(cores)
+      family_name <- nb_family_label(cds)
+
+      res <- fast_nb_cpp_call(
+        cds,
+        fast_diff_test_sparse_cpp,
+        fast_diff_test_dense_cpp,
+        X_full, X_red, disp_guesses, sf, relative_expr, num_threads, family_name
+      )
+
+      data.frame(
+        status = as.character(res$status),
+        family = as.character(res$family),
+        pval = as.numeric(res$pval),
+        row.names = rownames(cds),
+        stringsAsFactors = FALSE
+      )
+    }, error = function(e) {
+      warning("Fast C++ differentialGeneTest fallback to VGAM: ", e$message, call. = FALSE)
+      NULL
+    })
+
+    if (!is.null(try_cpp)) {
+      diff_test_res <- try_cpp
+    }
   }
 
-  diff_test_res <- do.call(rbind.data.frame, diff_test_res)
+  if (is.null(diff_test_res)) {
+    if (cores > 1) {
+      diff_test_res <- mcesApply(cds, 1, diff_test_helper,
+        c("BiocGenerics", "VGAM", "Matrix"),
+        cores = cores,
+        fullModelFormulaStr = fullModelFormulaStr,
+        reducedModelFormulaStr = reducedModelFormulaStr,
+        expressionFamily = cds@expressionFamily,
+        relative_expr = relative_expr,
+        disp_func = cds@dispFitInfo[["blind"]]$disp_func,
+        verbose = verbose
+      )
+      diff_test_res
+    } else {
+      diff_test_res <- smartEsApply(cds, 1, diff_test_helper,
+        convert_to_dense = TRUE,
+        fullModelFormulaStr = fullModelFormulaStr,
+        reducedModelFormulaStr = reducedModelFormulaStr,
+        expressionFamily = cds@expressionFamily,
+        relative_expr = relative_expr,
+        disp_func = cds@dispFitInfo[["blind"]]$disp_func,
+        verbose = verbose
+      )
+      diff_test_res
+    }
+    diff_test_res <- do.call(rbind.data.frame, diff_test_res)
+  }
 
   diff_test_res$qval <- 1
   diff_test_res$qval[which(diff_test_res$status == "OK")] <- stats::p.adjust(

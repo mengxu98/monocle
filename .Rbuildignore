@@ -6,3 +6,4 @@
 examples/
 travis_setup.sh
 examples
+^\.github$

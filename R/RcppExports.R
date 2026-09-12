@@ -2,5 +2,26 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 jaccard_coeff <- function(R_idx, R_weight) {
-  .Call("_monocle_jaccard_coeff", PACKAGE = "monocle", R_idx, R_weight)
+    .Call(`_monocle_jaccard_coeff`, R_idx, R_weight)
 }
+
+find_closest_point_cpp <- function(Z, Y, num_threads = 1L) {
+    .Call(`_monocle_find_closest_point_cpp`, Z, Y, num_threads)
+}
+
+fast_diff_test_sparse_cpp <- function(exprs_t, X_full, X_red, disp_guesses, size_factors, relative_expr = TRUE, num_threads = 1L, family_name = "negbinomial.size") {
+    .Call(`_monocle_fast_diff_test_sparse_cpp`, exprs_t, X_full, X_red, disp_guesses, size_factors, relative_expr, num_threads, family_name)
+}
+
+fast_diff_test_dense_cpp <- function(exprs, X_full, X_red, disp_guesses, size_factors, relative_expr = TRUE, num_threads = 1L, family_name = "negbinomial.size") {
+    .Call(`_monocle_fast_diff_test_dense_cpp`, exprs, X_full, X_red, disp_guesses, size_factors, relative_expr, num_threads, family_name)
+}
+
+fast_nb_fit_predict_sparse_cpp <- function(exprs_t, X_fit, X_pred, disp_guesses, size_factors, relative_expr = TRUE, want_resid = FALSE, num_threads = 1L) {
+    .Call(`_monocle_fast_nb_fit_predict_sparse_cpp`, exprs_t, X_fit, X_pred, disp_guesses, size_factors, relative_expr, want_resid, num_threads)
+}
+
+fast_nb_fit_predict_dense_cpp <- function(exprs, X_fit, X_pred, disp_guesses, size_factors, relative_expr = TRUE, want_resid = FALSE, num_threads = 1L) {
+    .Call(`_monocle_fast_nb_fit_predict_dense_cpp`, exprs, X_fit, X_pred, disp_guesses, size_factors, relative_expr, want_resid, num_threads)
+}
+

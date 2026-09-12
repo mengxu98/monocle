@@ -1324,10 +1324,12 @@ findNearestPointOnMST <- function(cds) {
 
   tip_leaves <- names(which(igraph::degree(dp_mst) == 1))
 
-  distances_Z_to_Y <- proxy::dist(Matrix::t(Z), Matrix::t(Y))
-  closest_vertex <- apply(distances_Z_to_Y, 1, function(z) {
-    which(z == min(z))[1]
-  })
+  closest_vertex <- find_closest_point_cpp(
+    thisutils::as_matrix(Z),
+    thisutils::as_matrix(Y),
+    nb_num_threads(getOption("mc.cores", 1L))
+  )
+  names(closest_vertex) <- colnames(Z)
 
   closest_vertex_names <- colnames(Y)[closest_vertex]
   closest_vertex_df <- thisutils::as_matrix(closest_vertex)
@@ -1354,26 +1356,46 @@ project2MST <- function(cds, Projection_Method) {
   if (!is.function(Projection_Method)) {
     P <- Y[, closest_vertex]
   } else {
-    P <- matrix(rep(0, length(Z)), nrow = nrow(Z))
-    for (i in 1:length(closest_vertex)) {
-      neighbors <- names(igraph::neighbors(dp_mst, closest_vertex_names[i], mode = "all"))
-      projection <- NULL
-      distance <- NULL
-      Z_i <- Z[, i]
+    P <- matrix(0, nrow = nrow(Z), ncol = ncol(Z))
+    n_cells <- ncol(Z)
+    tip_set <- unique(as.character(tip_leaves))
+    verts <- igraph::V(dp_mst)
+    av <- igraph::adjacent_vertices(dp_mst, verts, mode = "all")
+    vertex_ids <- names(verts)
+    if (is.null(vertex_ids) || any(vertex_ids == "")) {
+      vertex_ids <- as.character(verts)
+    }
+    av_names <- lapply(av, function(nb) {
+      nms <- names(nb)
+      if (is.null(nms) || any(nms == "")) as.character(nb) else nms
+    })
+    names(av_names) <- vertex_ids
 
+    for (i in seq_len(n_cells)) {
+      vname <- as.character(closest_vertex_names[i])
+      neighbors <- av_names[[vname]]
+      Z_i <- Z[, i]
+      if (is.null(neighbors) || length(neighbors) == 0) {
+        P[, i] <- Z_i
+        next
+      }
+      best_d <- Inf
+      best_tmp <- Z_i
+      on_tip <- vname %in% tip_set
       for (neighbor in neighbors) {
-        if (closest_vertex_names[i] %in% tip_leaves) {
-          tmp <- projPointOnLine(Z_i, Y[, c(closest_vertex_names[i], neighbor)])
+        seg <- Y[, c(vname, neighbor), drop = FALSE]
+        if (on_tip) {
+          tmp <- projPointOnLine(Z_i, seg)
         } else {
-          tmp <- Projection_Method(Z_i, Y[, c(closest_vertex_names[i], neighbor)])
+          tmp <- Projection_Method(Z_i, seg)
         }
-        projection <- rbind(projection, tmp)
-        distance <- c(distance, stats::dist(rbind(Z_i, tmp)))
+        d <- sum((Z_i - tmp)^2)
+        if (d < best_d) {
+          best_d <- d
+          best_tmp <- tmp
+        }
       }
-      if (!inherits(projection, "matrix")) {
-        projection <- thisutils::as_matrix(projection)
-      }
-      P[, i] <- projection[which(distance == min(distance))[1], ]
+      P[, i] <- best_tmp
     }
   }
 

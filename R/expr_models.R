@@ -249,6 +249,30 @@ genSmoothCurves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, d
                             relative_expr = TRUE, response_type = "response", cores = 1) {
   expressionFamily <- cds@expressionFamily
 
+  if (is_negbinomial_cds(cds) && identical(response_type, "response")) {
+    curve_cpp <- tryCatch({
+      des <- nb_design_for_newdata(trend_formula, pData(cds), new_data)
+      disp_guesses <- nb_dispersion_guesses(cds)
+      sf <- nb_size_factors(cds, relative_expr)
+      res <- fast_nb_cpp_call(
+        cds,
+        fast_nb_fit_predict_sparse_cpp,
+        fast_nb_fit_predict_dense_cpp,
+        des$X_fit, des$X_new, disp_guesses, sf, relative_expr, FALSE, nb_num_threads(cores)
+      )
+      M <- thisutils::as_matrix(res$mu_pred)
+      rownames(M) <- rownames(fData(cds))
+      colnames(M) <- rownames(new_data)
+      M
+    }, error = function(e) {
+      warning("Fast C++ genSmoothCurves fallback to VGAM: ", e$message, call. = FALSE)
+      NULL
+    })
+    if (!is.null(curve_cpp)) {
+      return(curve_cpp)
+    }
+  }
+
   if (cores > 1) {
     expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expressionFamily, relative_expr, new_data, fit_model_helper, responseMatrix,
                                                           calculate_NB_dispersion_hint, calculate_QP_dispersion_hint) {
@@ -312,6 +336,31 @@ genSmoothCurves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, d
 genSmoothCurveResiduals <- function(cds, trend_formula = "~sm.ns(Pseudotime, df = 3)",
                                     relative_expr = TRUE, residual_type = "response", cores = 1) {
   expressionFamily <- cds@expressionFamily
+
+  if (is_negbinomial_cds(cds) && identical(residual_type, "response")) {
+    resid_cpp <- tryCatch({
+      pd <- pData(cds)
+      des <- nb_design_for_newdata(trend_formula, pd, pd)
+      disp_guesses <- nb_dispersion_guesses(cds)
+      sf <- nb_size_factors(cds, relative_expr)
+      res <- fast_nb_cpp_call(
+        cds,
+        fast_nb_fit_predict_sparse_cpp,
+        fast_nb_fit_predict_dense_cpp,
+        des$X_fit, des$X_new, disp_guesses, sf, relative_expr, TRUE, nb_num_threads(cores)
+      )
+      M <- thisutils::as_matrix(res$resid)
+      rownames(M) <- rownames(fData(cds))
+      colnames(M) <- rownames(pd)
+      M
+    }, error = function(e) {
+      warning("Fast C++ genSmoothCurveResiduals fallback to VGAM: ", e$message, call. = FALSE)
+      NULL
+    })
+    if (!is.null(resid_cpp)) {
+      return(resid_cpp)
+    }
+  }
 
   if (cores > 1) {
     expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expressionFamily, relative_expr, fit_model_helper, residualMatrix,
@@ -454,7 +503,13 @@ disp_calc_helper_NB <- function(
   nzGenes <- Matrix::rowSums(rounded > cds@lowerDetectionLimit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
 
-  x <- t(t(rounded[nzGenes, ]) / pData(cds[nzGenes, ])$Size_Factor)
+  x <- rounded[nzGenes, , drop = FALSE]
+  sf <- pData(cds[nzGenes, ])$Size_Factor
+  if (isSparseMatrix(x)) {
+    x <- Matrix::t(Matrix::t(x) / sf)
+  } else {
+    x <- t(t(as.matrix(x)) / sf)
+  }
 
   xim <- mean(1 / pData(cds[nzGenes, ])$Size_Factor)
 
