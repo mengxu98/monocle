@@ -75,7 +75,7 @@ test_that("row_mean_var matches densifying row variance without filling zeros", 
   x <- Matrix::rsparsematrix(20, 15, density = 0.2)
   x <- abs(x)
   densifying_var <- as.numeric(Matrix::rowMeans((as.matrix(x) - Matrix::rowMeans(as.matrix(x)))^2))
-  sparse_var <- row_mean_var(x)$var
+  sparse_var <- fast_ns_fun("row_mean_var")(x)$var
   expect_equal(sparse_var, densifying_var, tolerance = 1e-10)
   expect_lt(Matrix::nnzero(x * x), prod(dim(x)))
 })
@@ -104,8 +104,8 @@ test_that("disp_calc_helper_NB agrees for sparse and dense count matrices", {
   cds_dense <- make_cds(counts)
   cds_sparse <- make_cds(Matrix::Matrix(counts, sparse = TRUE))
   expect_equal(
-    disp_calc_helper_NB(cds_sparse, cds_sparse@expressionFamily, 1),
-    disp_calc_helper_NB(cds_dense, cds_dense@expressionFamily, 1),
+    fast_ns_fun("disp_calc_helper_NB")(cds_sparse, cds_sparse@expressionFamily, 1),
+    fast_ns_fun("disp_calc_helper_NB")(cds_dense, cds_dense@expressionFamily, 1),
     tolerance = 1e-8
   )
 })
