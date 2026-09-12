@@ -725,6 +725,45 @@ extract_ddrtree_ordering <- function(cds, root_cell, verbose = T) {
   dp <- cellPairwiseDistances(cds)
   dp_mst <- minSpanningTree(cds)
 
+  if (isTRUE(getOption("monocle.fast_ordering", TRUE))) {
+    fast_df <- tryCatch({
+      dp_mat <- if (is.matrix(dp)) dp else as.matrix(dp)
+      mst_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
+      if (length(mst_edges) == 0) {
+        mst_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+      }
+      mst_edges <- matrix(as.integer(mst_edges), ncol = 2L)
+      vertex_names <- as.character(igraph::V(dp_mst)$name)
+      root_idx <- match(root_cell, vertex_names)
+      if (is.na(root_idx)) {
+        root_idx <- 1L
+      }
+      fast_ordering <- ddrtree_order_from_edges_cpp(
+        n_vertices = ncol(dp_mat),
+        edges = mst_edges,
+        weights = as.numeric(dp_mat[cbind(mst_edges[, 1], mst_edges[, 2])]),
+        root_cell = root_idx
+      )
+      parent_names <- rep(NA_character_, length(vertex_names))
+      has_parent <- fast_ordering$parent > 0L
+      parent_names[has_parent] <- vertex_names[fast_ordering$parent[has_parent]]
+      data.frame(
+        sample_name = vertex_names,
+        cell_state = factor(fast_ordering$state),
+        pseudo_time = as.vector(fast_ordering$pseudotime),
+        parent = parent_names,
+        stringsAsFactors = FALSE
+      )
+    }, error = function(e) {
+      warning("Fast C++ DDRTree ordering fallback to R: ", e$message, call. = FALSE)
+      NULL
+    })
+    if (!is.null(fast_df)) {
+      row.names(fast_df) <- fast_df$sample_name
+      return(fast_df)
+    }
+  }
+
   curr_state <- 1
 
   res <- list(subtree = dp_mst, root = root_cell)
@@ -802,6 +841,37 @@ select_root_cell <- function(cds, root_state = NULL, reverse = FALSE) {
     root_cell_candidates <- subset(pData(cds), State == root_state)
     if (nrow(root_cell_candidates) == 0) {
       stop(paste("Error: no cells for State =", root_state))
+    }
+
+    if (isTRUE(getOption("monocle.fast_ordering", TRUE)) &&
+      identical(row.names(pData(cds)), colnames(cds))) {
+      fast_root <- tryCatch({
+        prev_root <- cds@auxOrderingData[[cds@dim_reduce_type]]$root_cell
+        use_min_pseudotime <- FALSE
+        if (!is.null(prev_root) && !is.na(match(prev_root, row.names(pData(cds))))) {
+          use_min_pseudotime <- as.character(
+            pData(cds)[prev_root, "State"]
+          ) == as.character(root_state)
+        }
+        graph_point_idx <- ddrtree_select_root_by_state_cpp(
+          coords = thisutils::as_matrix(reducedDimS(cds)),
+          candidate_cells = as.integer(
+            match(row.names(root_cell_candidates), colnames(cds))
+          ),
+          pseudotime = as.numeric(pData(cds)$Pseudotime),
+          closest_vertex = as.integer(
+            cds@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_closest_vertex
+          ),
+          use_min_pseudotime = isTRUE(use_min_pseudotime)
+        )
+        igraph::V(minSpanningTree(cds))[graph_point_idx]$name
+      }, error = function(e) {
+        warning("Fast C++ root cell selection fallback to R: ", e$message, call. = FALSE)
+        NULL
+      })
+      if (!is.null(fast_root)) {
+        return(fast_root)
+      }
     }
 
     dp <- thisutils::as_matrix(
@@ -1353,8 +1423,31 @@ project2MST <- function(cds, Projection_Method) {
 
   tip_leaves <- names(which(igraph::degree(dp_mst) == 1))
 
+  fast_proj <- NULL
+  if (is.function(Projection_Method) &&
+    identical(Projection_Method, project_point_to_line_segment) &&
+    isTRUE(getOption("monocle.fast_ordering", TRUE))) {
+    fast_proj <- tryCatch({
+      center_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
+      if (length(center_edges) == 0) {
+        center_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+      }
+      ddrtree_project_cells_to_mst_cpp(
+        z = thisutils::as_matrix(Z),
+        y = thisutils::as_matrix(Y),
+        graph_edges = matrix(as.integer(center_edges), ncol = 2L),
+        closest_vertex = as.integer(closest_vertex)
+      )
+    }, error = function(e) {
+      warning("Fast C++ MST projection fallback to R: ", e$message, call. = FALSE)
+      NULL
+    })
+  }
+
   if (!is.function(Projection_Method)) {
     P <- Y[, closest_vertex]
+  } else if (!is.null(fast_proj)) {
+    P <- fast_proj$projected
   } else {
     P <- matrix(0, nrow = nrow(Z), ncol = ncol(Z))
     n_cells <- ncol(Z)
@@ -1408,11 +1501,28 @@ project2MST <- function(cds, Projection_Method) {
   diag(dp) <- 0
 
   cellPairwiseDistances(cds) <- dp
-  gp <- igraph::graph_from_adjacency_matrix(
-    dp,
-    mode = "undirected", weighted = TRUE
-  )
-  dp_mst <- igraph::mst(gp)
+  if (!is.null(fast_proj)) {
+    n_cells <- ncol(Z)
+    mst_edges <- fast_proj$edges
+    tree_adj <- Matrix::sparseMatrix(
+      i = pmin(mst_edges[, 1], mst_edges[, 2]),
+      j = pmax(mst_edges[, 1], mst_edges[, 2]),
+      x = dp[cbind(mst_edges[, 1], mst_edges[, 2])],
+      dims = c(n_cells, n_cells),
+      dimnames = list(colnames(Z), colnames(Z)),
+      symmetric = TRUE
+    )
+    dp_mst <- igraph::graph_from_adjacency_matrix(
+      tree_adj,
+      mode = "undirected", weighted = TRUE
+    )
+  } else {
+    gp <- igraph::graph_from_adjacency_matrix(
+      dp,
+      mode = "undirected", weighted = TRUE
+    )
+    dp_mst <- igraph::mst(gp)
+  }
 
   cds@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_tree <- dp_mst
   cds@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_dist <- P

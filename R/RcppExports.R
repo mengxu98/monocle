@@ -9,6 +9,18 @@ find_closest_point_cpp <- function(Z, Y, num_threads = 1L) {
     .Call(`_monocle_find_closest_point_cpp`, Z, Y, num_threads)
 }
 
+ddrtree_project_cells_to_mst_cpp <- function(z, y, graph_edges, closest_vertex) {
+    .Call(`_monocle_ddrtree_project_cells_to_mst_cpp`, z, y, graph_edges, closest_vertex)
+}
+
+ddrtree_order_from_edges_cpp <- function(n_vertices, edges, weights, root_cell = 1L) {
+    .Call(`_monocle_ddrtree_order_from_edges_cpp`, n_vertices, edges, weights, root_cell)
+}
+
+ddrtree_select_root_by_state_cpp <- function(coords, candidate_cells, pseudotime, closest_vertex, use_min_pseudotime = FALSE) {
+    .Call(`_monocle_ddrtree_select_root_by_state_cpp`, coords, candidate_cells, pseudotime, closest_vertex, use_min_pseudotime)
+}
+
 fast_diff_test_sparse_cpp <- function(exprs_t, X_full, X_red, disp_guesses, size_factors, relative_expr = TRUE, num_threads = 1L, family_name = "negbinomial.size") {
     .Call(`_monocle_fast_diff_test_sparse_cpp`, exprs_t, X_full, X_red, disp_guesses, size_factors, relative_expr, num_threads, family_name)
 }

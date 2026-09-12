@@ -36,6 +36,49 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ddrtree_project_cells_to_mst_cpp
+List ddrtree_project_cells_to_mst_cpp(const NumericMatrix& z, const NumericMatrix& y, const IntegerMatrix& graph_edges, const IntegerVector& closest_vertex);
+RcppExport SEXP _monocle_ddrtree_project_cells_to_mst_cpp(SEXP zSEXP, SEXP ySEXP, SEXP graph_edgesSEXP, SEXP closest_vertexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type graph_edges(graph_edgesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type closest_vertex(closest_vertexSEXP);
+    rcpp_result_gen = Rcpp::wrap(ddrtree_project_cells_to_mst_cpp(z, y, graph_edges, closest_vertex));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ddrtree_order_from_edges_cpp
+List ddrtree_order_from_edges_cpp(int n_vertices, const IntegerMatrix& edges, const NumericVector& weights, int root_cell);
+RcppExport SEXP _monocle_ddrtree_order_from_edges_cpp(SEXP n_verticesSEXP, SEXP edgesSEXP, SEXP weightsSEXP, SEXP root_cellSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_vertices(n_verticesSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type root_cell(root_cellSEXP);
+    rcpp_result_gen = Rcpp::wrap(ddrtree_order_from_edges_cpp(n_vertices, edges, weights, root_cell));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ddrtree_select_root_by_state_cpp
+int ddrtree_select_root_by_state_cpp(const NumericMatrix& coords, const IntegerVector& candidate_cells, const NumericVector& pseudotime, const IntegerVector& closest_vertex, bool use_min_pseudotime);
+RcppExport SEXP _monocle_ddrtree_select_root_by_state_cpp(SEXP coordsSEXP, SEXP candidate_cellsSEXP, SEXP pseudotimeSEXP, SEXP closest_vertexSEXP, SEXP use_min_pseudotimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type coords(coordsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type candidate_cells(candidate_cellsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type pseudotime(pseudotimeSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type closest_vertex(closest_vertexSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_min_pseudotime(use_min_pseudotimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(ddrtree_select_root_by_state_cpp(coords, candidate_cells, pseudotime, closest_vertex, use_min_pseudotime));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_diff_test_sparse_cpp
 Rcpp::List fast_diff_test_sparse_cpp(const Eigen::SparseMatrix<double>& exprs_t, const Eigen::MatrixXd& X_full, const Eigen::MatrixXd& X_red, const Rcpp::NumericVector& disp_guesses, const Rcpp::NumericVector& size_factors, bool relative_expr, int num_threads, std::string family_name);
 RcppExport SEXP _monocle_fast_diff_test_sparse_cpp(SEXP exprs_tSEXP, SEXP X_fullSEXP, SEXP X_redSEXP, SEXP disp_guessesSEXP, SEXP size_factorsSEXP, SEXP relative_exprSEXP, SEXP num_threadsSEXP, SEXP family_nameSEXP) {
@@ -112,6 +155,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_monocle_jaccard_coeff", (DL_FUNC) &_monocle_jaccard_coeff, 2},
     {"_monocle_find_closest_point_cpp", (DL_FUNC) &_monocle_find_closest_point_cpp, 3},
+    {"_monocle_ddrtree_project_cells_to_mst_cpp", (DL_FUNC) &_monocle_ddrtree_project_cells_to_mst_cpp, 4},
+    {"_monocle_ddrtree_order_from_edges_cpp", (DL_FUNC) &_monocle_ddrtree_order_from_edges_cpp, 4},
+    {"_monocle_ddrtree_select_root_by_state_cpp", (DL_FUNC) &_monocle_ddrtree_select_root_by_state_cpp, 5},
     {"_monocle_fast_diff_test_sparse_cpp", (DL_FUNC) &_monocle_fast_diff_test_sparse_cpp, 8},
     {"_monocle_fast_diff_test_dense_cpp", (DL_FUNC) &_monocle_fast_diff_test_dense_cpp, 8},
     {"_monocle_fast_nb_fit_predict_sparse_cpp", (DL_FUNC) &_monocle_fast_nb_fit_predict_sparse_cpp, 8},
