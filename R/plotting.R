@@ -448,7 +448,7 @@ plot_genes_jitter <- function(
     plot_trend = FALSE,
     label_by_short_name = TRUE,
     relative_expr = TRUE) {
-  if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
     integer_expression <- FALSE
@@ -570,7 +570,7 @@ plot_genes_positive_cells <- function(
     plot_limits = c(0, 100)) {
   percent <- NULL
 
-  if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
     integer_expression <- FALSE
@@ -679,7 +679,7 @@ plot_genes_in_pseudotime <- function(
     horizontal_jitter = NULL) {
   f_id <- NA
   Cell <- NA
-  if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
     integer_expression <- FALSE
@@ -1103,7 +1103,7 @@ plot_genes_branched_pseudotime <- function(
     cds_subset <- cds
     pData(cds_subset)$Branch <- pData(cds_subset)$State
   }
-  if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
     integer_expression <- FALSE
@@ -1265,7 +1265,7 @@ plot_coexpression_matrix <- function(
 
   cds_subset <- cds[union(row_gene_ids, col_gene_ids), ]
 
-  if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
     integer_expression <- FALSE
@@ -1694,7 +1694,7 @@ plot_cell_clusters <- function(
     markers_fData <- subset(fData(cds), gene_short_name %in% markers)
     if (nrow(markers_fData) >= 1) {
       cds_subset <- cds[row.names(markers_fData), ]
-      if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+      if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
         integer_expression <- TRUE
       } else {
         integer_expression <- FALSE

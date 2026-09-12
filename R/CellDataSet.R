@@ -1,5 +1,11 @@
 setOldClass(c("igraph"), prototype = structure(list(), class = "igraph"))
 
+# Cell-level pairwise distances are stored densely whenever they fit, but the
+# DDRTree ordering only ever reads the minimum spanning tree edge weights, and
+# a dense n_cells x n_cells matrix is quadratic in memory (7 GB at 30k cells).
+# Allow a sparse Matrix there so large CellDataSets stay orderable.
+setClassUnion("matrix_or_Matrix", c("matrix", "Matrix"))
+
 #' The CellDataSet class
 #'
 #' The main class used by Monocle to hold single cell expression data.
@@ -32,7 +38,7 @@ setClass("CellDataSet",
     reducedDimA = "matrix",
     reducedDimK = "matrix",
     minSpanningTree = "igraph",
-    cellPairwiseDistances = "matrix",
+    cellPairwiseDistances = "matrix_or_Matrix",
     expressionFamily = "vglmff",
     lowerDetectionLimit = "numeric",
     dispFitInfo = "environment",

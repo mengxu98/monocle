@@ -727,7 +727,9 @@ extract_ddrtree_ordering <- function(cds, root_cell, verbose = T) {
 
   if (isTRUE(getOption("monocle.fast_ordering", TRUE))) {
     fast_df <- tryCatch({
-      dp_mat <- if (is.matrix(dp)) dp else as.matrix(dp)
+      # Index the distances directly: dp is a Matrix of class numeric for the
+      # center-level distances and may be sparse for the cell-level ones, where
+      # as.matrix() would need n_cells^2 memory.
       mst_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
       if (length(mst_edges) == 0) {
         mst_edges <- matrix(integer(0), nrow = 0, ncol = 2)
@@ -739,9 +741,9 @@ extract_ddrtree_ordering <- function(cds, root_cell, verbose = T) {
         root_idx <- 1L
       }
       fast_ordering <- ddrtree_order_from_edges_cpp(
-        n_vertices = ncol(dp_mat),
+        n_vertices = ncol(dp),
         edges = mst_edges,
-        weights = as.numeric(dp_mat[cbind(mst_edges[, 1], mst_edges[, 2])]),
+        weights = as.numeric(dp[cbind(mst_edges[, 1], mst_edges[, 2])]),
         root_cell = root_idx
       )
       parent_names <- rep(NA_character_, length(vertex_names))
@@ -1101,7 +1103,7 @@ normalize_expr_data <- function(
   }
 
   norm_method <- match.arg(norm_method)
-  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     if (is.null(pseudo_expr)) {
       if (norm_method == "log") {
         pseudo_expr <- 1
@@ -1387,6 +1389,41 @@ reduceDimension <- function(
   cds
 }
 
+# Largest number of cells for which the full cell-by-cell distance matrix is
+# materialized during DDRTree ordering. A dense n_cells x n_cells numeric matrix
+# needs 8 * n_cells^2 bytes (~0.8 GB at 10k cells, ~7 GB at 30k cells), and the
+# ordering only ever reads the MST edge weights, so above this limit those
+# weights are kept as a sparse tree instead.
+dense_pairwise_limit <- function() {
+  limit <- suppressWarnings(as.integer(getOption("monocle.max_dense_pairwise_cells", 10000L))[1])
+  if (length(limit) != 1L || is.na(limit) || limit < 0L) {
+    limit <- 10000L
+  }
+  limit
+}
+
+# Symmetric sparse adjacency of the cell-level MST. Weights are the projected
+# cell-to-cell distances shifted by the smallest positive distance, matching the
+# values the historical dense cellPairwiseDistances matrix held on those edges.
+cell_mst_adjacency <- function(edges, weights, n_cells, cell_names) {
+  edges <- matrix(as.integer(edges), ncol = 2L)
+  if (nrow(edges) == 0L) {
+    return(Matrix::sparseMatrix(
+      i = integer(0), j = integer(0), x = numeric(0),
+      dims = c(n_cells, n_cells),
+      dimnames = list(cell_names, cell_names)
+    ))
+  }
+  Matrix::sparseMatrix(
+    i = pmin(edges[, 1], edges[, 2]),
+    j = pmax(edges[, 1], edges[, 2]),
+    x = as.numeric(weights),
+    dims = c(n_cells, n_cells),
+    dimnames = list(cell_names, cell_names),
+    symmetric = TRUE
+  )
+}
+
 findNearestPointOnMST <- function(cds) {
   dp_mst <- minSpanningTree(cds)
   Z <- reducedDimS(cds)
@@ -1493,30 +1530,38 @@ project2MST <- function(cds, Projection_Method) {
   }
 
   colnames(P) <- colnames(Z)
+  n_cells <- ncol(Z)
 
-  dp <- thisutils::as_matrix(stats::dist(Matrix::t(P)))
-
-  min_dist <- min(dp[dp != 0])
-  dp <- dp + min_dist
-  diag(dp) <- 0
-
-  cellPairwiseDistances(cds) <- dp
   if (!is.null(fast_proj)) {
-    n_cells <- ncol(Z)
+    # The C++ projection already returns the MST edge weights (distance between
+    # projected cells, shifted by the smallest positive distance), so the dense
+    # n_cells x n_cells distance matrix is not needed unless we want to keep
+    # cellPairwiseDistances in its historical dense form.
     mst_edges <- fast_proj$edges
-    tree_adj <- Matrix::sparseMatrix(
-      i = pmin(mst_edges[, 1], mst_edges[, 2]),
-      j = pmax(mst_edges[, 1], mst_edges[, 2]),
-      x = dp[cbind(mst_edges[, 1], mst_edges[, 2])],
-      dims = c(n_cells, n_cells),
-      dimnames = list(colnames(Z), colnames(Z)),
-      symmetric = TRUE
-    )
+    mst_weights <- as.numeric(fast_proj$weights)
+    tree_adj <- cell_mst_adjacency(mst_edges, mst_weights, n_cells, colnames(Z))
+
+    if (n_cells <= dense_pairwise_limit()) {
+      dp <- thisutils::as_matrix(stats::dist(Matrix::t(P)))
+      dp <- dp + as.numeric(fast_proj$min_dist)
+      diag(dp) <- 0
+      cellPairwiseDistances(cds) <- dp
+    } else {
+      cellPairwiseDistances(cds) <- tree_adj
+    }
+
     dp_mst <- igraph::graph_from_adjacency_matrix(
       tree_adj,
       mode = "undirected", weighted = TRUE
     )
   } else {
+    dp <- thisutils::as_matrix(stats::dist(Matrix::t(P)))
+
+    min_dist <- min(dp[dp != 0])
+    dp <- dp + min_dist
+    diag(dp) <- 0
+
+    cellPairwiseDistances(cds) <- dp
     gp <- igraph::graph_from_adjacency_matrix(
       dp,
       mode = "undirected", weighted = TRUE

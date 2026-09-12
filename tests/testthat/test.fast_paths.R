@@ -161,3 +161,129 @@ test_that("genSmoothCurves C++ matches VGAM response curves on synthetic NB", {
     0.99
   )
 })
+
+test_that("zero-count genes are reported as OK with p = 1, as the VGAM path does", {
+  cds <- make_synthetic_nb_cds(n_genes = 40, n_cells = 60, seed = 5)
+  counts <- Biobase::exprs(cds)
+  zero_genes <- rownames(cds)[1:2]
+  counts[zero_genes, ] <- 0
+  Biobase::exprs(cds) <- counts
+
+  res <- monocle::differentialGeneTest(
+    cds,
+    fullModelFormulaStr = "~sm.ns(Pseudotime, df=3)",
+    reducedModelFormulaStr = "~1",
+    cores = 1
+  )
+
+  expect_identical(as.character(res[zero_genes, "status"]), c("OK", "OK"))
+  expect_equal(as.numeric(res[zero_genes, "pval"]), c(1, 1))
+  # q-values are adjusted over every gene, so the zero-count genes must not be
+  # dropped from the BH denominator.
+  expect_equal(res$qval, stats::p.adjust(res$pval, method = "BH"))
+})
+
+test_that("zero-count genes yield zero curves and residuals instead of NA", {
+  cds <- make_synthetic_nb_cds(n_genes = 40, n_cells = 60, seed = 6)
+  counts <- Biobase::exprs(cds)
+  zero_genes <- rownames(cds)[1:2]
+  counts[zero_genes, ] <- 0
+  Biobase::exprs(cds) <- counts
+
+  new_data <- data.frame(Pseudotime = seq(0, 10, length.out = 5))
+  row.names(new_data) <- paste0("pt", seq_len(nrow(new_data)))
+
+  curves <- monocle::genSmoothCurves(
+    cds,
+    new_data = new_data,
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    cores = 1
+  )
+  expect_false(any(is.na(curves[zero_genes, , drop = FALSE])))
+  expect_equal(unname(curves[zero_genes, , drop = FALSE]), matrix(0, 2, nrow(new_data)))
+
+  residuals <- fast_ns_fun("genSmoothCurveResiduals")(
+    cds,
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    residual_type = "response",
+    cores = 1
+  )
+  residuals <- as.matrix(residuals)
+  expect_false(any(is.na(residuals[zero_genes, , drop = FALSE])))
+  expect_equal(unname(residuals[zero_genes, , drop = FALSE]), matrix(0, 2, ncol(cds)))
+})
+
+test_that("negbinomial() CellDataSets are detected without a length-2 condition", {
+  is_negbinomial_cds <- fast_ns_fun("is_negbinomial_cds")
+  counts <- matrix(
+    stats::rpois(6 * 8, 4),
+    nrow = 6,
+    dimnames = list(paste0("g", 1:6), paste0("c", 1:8))
+  )
+  pd <- data.frame(Pseudotime = seq_len(8), row.names = colnames(counts))
+  fd <- data.frame(gene_short_name = rownames(counts), row.names = rownames(counts))
+  cds <- monocle::newCellDataSet(
+    counts,
+    phenoData = Biobase::AnnotatedDataFrame(pd),
+    featureData = Biobase::AnnotatedDataFrame(fd),
+    expressionFamily = VGAM::negbinomial()
+  )
+
+  # vfamily for negbinomial() is c("negbinomial", "VGAMcategorical"), so the
+  # helper has to collapse it: a length-2 result breaks if () and && callers.
+  detected <- is_negbinomial_cds(cds)
+  expect_length(detected, 1L)
+  expect_identical(detected, TRUE)
+  expect_true(is_negbinomial_cds(cds) && TRUE)
+
+  size_cds <- make_synthetic_nb_cds(n_genes = 6, n_cells = 20, seed = 2)
+  expect_identical(is_negbinomial_cds(size_cds), TRUE)
+})
+
+test_that("negbinomial() CellDataSets run through dispersions and DE", {
+  set.seed(8)
+  n_genes <- 40
+  n_cells <- 60
+  size_factor <- stats::runif(n_cells, 0.7, 1.3)
+  pt <- seq(0, 10, length.out = n_cells)
+  mu <- outer(stats::runif(n_genes, 0.5, 8), exp(0.15 * (pt - mean(pt))))
+  counts <- matrix(0, n_genes, n_cells)
+  for (g in seq_len(n_genes)) {
+    counts[g, ] <- stats::rnbinom(n_cells, size = 5, mu = mu[g, ] * size_factor)
+  }
+  rownames(counts) <- paste0("g", seq_len(n_genes))
+  colnames(counts) <- paste0("c", seq_len(n_cells))
+  pd <- data.frame(Pseudotime = pt, row.names = colnames(counts))
+  fd <- data.frame(gene_short_name = rownames(counts), row.names = rownames(counts))
+  cds <- monocle::newCellDataSet(
+    counts,
+    phenoData = Biobase::AnnotatedDataFrame(pd),
+    featureData = Biobase::AnnotatedDataFrame(fd),
+    expressionFamily = VGAM::negbinomial()
+  )
+
+  # estimateDispersions() and the size factor guard used to compare vfamily with
+  # ==, which is length two for this family and errored out. Outlier removal is
+  # off because the refit on the trimmed table is fragile for synthetic data.
+  cds <- BiocGenerics::estimateSizeFactors(cds)
+  cds <- BiocGenerics::estimateDispersions(cds, remove_outliers = FALSE)
+
+  res <- monocle::differentialGeneTest(
+    cds,
+    fullModelFormulaStr = "~sm.ns(Pseudotime, df=3)",
+    reducedModelFormulaStr = "~1",
+    cores = 1
+  )
+  expect_identical(unique(as.character(res$status)), "OK")
+  expect_identical(unique(as.character(res$family)), "negbinomial")
+
+  new_data <- data.frame(Pseudotime = seq(0, 1, length.out = 5))
+  row.names(new_data) <- paste0("pt", seq_len(nrow(new_data)))
+  curves <- monocle::genSmoothCurves(
+    cds,
+    new_data = new_data,
+    trend_formula = "~sm.ns(Pseudotime, df=3)",
+    cores = 1
+  )
+  expect_true(all(is.finite(curves)))
+})

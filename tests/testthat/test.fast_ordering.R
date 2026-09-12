@@ -143,3 +143,46 @@ test_that("fast projection leaves a valid spanning projected tree", {
   )
   expect_true(all(is.finite(pData(cds)$Pseudotime)))
 })
+
+test_that("large cell counts keep only sparse MST distances and order identically", {
+  project2MST <- fast_ns_fun("project2MST")
+  project_point_to_line_segment <- fast_ns_fun("project_point_to_line_segment")
+  cell_mst_adjacency <- fast_ns_fun("cell_mst_adjacency")
+
+  cds_dense <- make_branching_cds(n_cells = 80)
+  options(monocle.max_dense_pairwise_cells = 0L)
+  cds_sparse <- make_branching_cds(n_cells = 80)
+  on.exit(options(monocle.max_dense_pairwise_cells = NULL), add = TRUE)
+
+  cds_sparse <- orderCells(cds_sparse)
+  options(monocle.max_dense_pairwise_cells = NULL)
+  cds_dense <- orderCells(cds_dense)
+  compare_orderings(cds_sparse, cds_dense)
+
+  # force the sparse representation and check it still describes the tree
+  options(monocle.max_dense_pairwise_cells = 0L)
+  cds_proj <- project2MST(cds_dense, project_point_to_line_segment)
+  options(monocle.max_dense_pairwise_cells = NULL)
+
+  dp <- cellPairwiseDistances(cds_proj)
+  n_cells <- length(colnames(cds_dense))
+  expect_s4_class(dp, "Matrix")
+  expect_identical(unname(dim(dp)), c(n_cells, n_cells))
+  expect_identical(dimnames(dp), list(colnames(cds_dense), colnames(cds_dense)))
+
+  tree <- cds_proj@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_tree
+  edges <- igraph::as_edgelist(tree, names = TRUE)
+  idx <- cbind(match(edges[, 1], colnames(cds_dense)), match(edges[, 2], colnames(cds_dense)))
+  expect_equal(as.numeric(dp[idx]), igraph::E(tree)$weight)
+  expect_true(all(is.finite(dp[idx])))
+  expect_true(all(dp[idx] > 0))
+
+  # and the same tree, expressed densely, carries the same weights
+  adj <- cell_mst_adjacency(
+    matrix(match(edges, colnames(cds_dense)), ncol = 2L),
+    igraph::E(tree)$weight,
+    n_cells,
+    colnames(cds_dense)
+  )
+  expect_equal(as.matrix(adj), as.matrix(dp))
+})

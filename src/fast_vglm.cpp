@@ -218,8 +218,12 @@ static Rcpp::List nb_lrt_from_y(
         double y_sum = 0.0;
         fill_y(g, y, y_sum);
 
+        // A gene with no counts anywhere carries no information. Report it as
+        // OK with p = 1 rather than FAIL so that the BH adjustment keeps the
+        // same test count as the VGAM path, which fits such genes and reports
+        // status OK with p = 1.
         if (y_sum <= 0.0) {
-            status[static_cast<size_t>(g)] = "FAIL";
+            status[static_cast<size_t>(g)] = "OK";
             pvals[static_cast<size_t>(g)] = 1.0;
             continue;
         }
@@ -281,8 +285,15 @@ static Rcpp::List nb_fit_predict_from_y(
         Eigen::VectorXd y;
         double y_sum = 0.0;
         fill_y(g, y, y_sum);
+        // mu -> 0 is the limiting MLE for a gene with no counts; 0/0 is what
+        // the VGAM path reports for these genes (up to floating point noise),
+        // so return zeros rather than NA to keep the two paths interchangeable.
         if (y_sum <= 0.0) {
-            status[static_cast<size_t>(g)] = "FAIL";
+            if (want_resid) {
+                resid.row(g).setZero();
+            }
+            mu_pred.row(g).setZero();
+            status[static_cast<size_t>(g)] = "OK";
             continue;
         }
 

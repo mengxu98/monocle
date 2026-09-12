@@ -56,7 +56,11 @@ setMethod(
     dispModelName <- "blind"
     stopifnot(is(object, "CellDataSet"))
 
-    if (!(identical("negbinomial.size", object@expressionFamily@vfamily) || identical("negbinomial", object@expressionFamily@vfamily))) {
+    # %in% rather than identical(): negbinomial() reports
+    # vfamily = c("negbinomial", "VGAMcategorical"), which is never identical to
+    # the family name on its own.
+    if (!any(object@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
+
       stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
     }
 
@@ -86,7 +90,7 @@ setMethod(
 )
 
 checkSizeFactors <- function(cds) {
-  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     if (is.null(BiocGenerics::sizeFactors(cds))) {
       stop("Error: you must call estimateSizeFactors() before calling this function.")
     }

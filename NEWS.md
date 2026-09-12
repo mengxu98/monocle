@@ -17,8 +17,28 @@
     `options(monocle.fast_ordering = FALSE)` to disable them.
   * Ordering a 3,000-cell dataset drops from ~9.3 s to ~1.2 s; the R path
     scales quadratically with cell number while the C++ path stays flat.
+  * DDRTree ordering no longer materializes the dense cell-by-cell distance
+    matrix for large datasets. `project2MST()` reuses the projected-cell MST
+    edge weights returned by the C++ primitive and stores `cellPairwiseDistances`
+    as a sparse `Matrix` once a dataset exceeds
+    `getOption("monocle.max_dense_pairwise_cells", 10000)` cells. A dense
+    `n_cells x n_cells` numeric matrix costs 8 * n_cells^2 bytes (~0.8 GB at 10k
+    cells, ~7 GB at 30k cells), which is what made large datasets impossible to
+    order; below the limit the stored matrix is unchanged.
+    `extract_ddrtree_ordering()` now indexes the distances instead of coercing
+    them to a dense matrix, so it works with either representation.
 
 * **bugs**:
+  * `is_negbinomial_cds()` returns a single logical again. `negbinomial()` carries
+    `vfamily = c("negbinomial", "VGAMcategorical")`, so the old `%in%` result had
+    length two and callers such as `differentialGeneTest()`, `genSmoothCurves()`
+    and `genSmoothCurveResiduals()` failed with
+    `'length = 2' in coercion to 'logical(1)'`.
+  * Genes with zero counts in every cell are reported as `status = "OK"` with
+    `pval = 1` (and zero fitted curves/residuals) instead of `status = "FAIL"`
+    with `NA`s, matching the VGAM path. Dropping them from the BH adjustment had
+    rescaled every q-value in the dataset (~30% smaller when 30% of the genes
+    were all-zero), so the fast paths are drop-in replacements again.
   * `estimateDispersions()`, `reduceDimension()`, and related row-variance
     calculations no longer convert sparse expression matrices to dense
     `TsparseMatrix` objects via `(x - rowMeans(x))^2`. That path overflows R's

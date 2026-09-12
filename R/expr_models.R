@@ -20,7 +20,7 @@ fit_model_helper <- function(
     sep = ""
   )
   orig_x <- x
-  if (expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     if (relative_expr) {
       x <- x / Size_Factor
     }
@@ -33,14 +33,14 @@ fit_model_helper <- function(
       if (is.null(disp_guess) == FALSE && disp_guess >
         0 && is.na(disp_guess) == FALSE) {
         size_guess <- 1 / disp_guess
-        if (expressionFamily@vfamily == "negbinomial") {
+        if (any(expressionFamily@vfamily == "negbinomial")) {
           expressionFamily <- negbinomial(isize = 1 / disp_guess, ...)
         } else {
           expressionFamily <- negbinomial.size(size = 1 / disp_guess, ...)
         }
       }
     }
-  } else if (expressionFamily@vfamily %in% c("uninormal", "binomialff")) {
+  } else if (any(expressionFamily@vfamily %in% c("uninormal", "binomialff"))) {
     f_expression <- x
   } else {
     f_expression <- log10(x)
@@ -61,12 +61,12 @@ fit_model_helper <- function(
     error = function(e) {
       print(e)
       backup_expression_family <- NULL
-      if (expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+      if (any(expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
         disp_guess <- calculate_NB_dispersion_hint(disp_func, round(orig_x), expr_selection_func = max)
         backup_expression_family <- negbinomial()
-      } else if (expressionFamily@vfamily %in% c("uninormal")) {
+      } else if (any(expressionFamily@vfamily %in% c("uninormal"))) {
         backup_expression_family <- NULL
-      } else if (expressionFamily@vfamily %in% c("binomialff")) {
+      } else if (any(expressionFamily@vfamily %in% c("binomialff"))) {
         backup_expression_family <- NULL
       } else {
         backup_expression_family <- NULL
@@ -152,9 +152,9 @@ responseMatrix <- function(models, newdata = NULL, response_type = "response", c
     if (is.null(x)) {
       NA
     } else {
-      if (x@family@vfamily %in% c("negbinomial", "negbinomial.size")) {
+      if (any(x@family@vfamily %in% c("negbinomial", "negbinomial.size"))) {
         predict(x, newdata = newdata, type = response_type)
-      } else if (x@family@vfamily %in% c("uninormal")) {
+      } else if (any(x@family@vfamily %in% c("uninormal"))) {
         predict(x, newdata = newdata, type = response_type)
       } else {
         10^predict(x, newdata = newdata, type = response_type)
@@ -545,7 +545,9 @@ estimateDispersionsForCellDataSet <- function(
     min_cells_detected,
     removeOutliers,
     verbose = FALSE) {
-  if (!(("negbinomial" == cds@expressionFamily@vfamily) || ("negbinomial.size" == cds@expressionFamily@vfamily))) {
+  # any() because negbinomial() reports vfamily = c("negbinomial", "VGAMcategorical")
+  if (!any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
+
     stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
   }
 
@@ -561,7 +563,7 @@ estimateDispersionsForCellDataSet <- function(
   progress_opts <- options()$dplyr.show_progress
   options(dplyr.show_progress = verbose)
 
-  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")) {
       cds_pdata <- dplyr::group_by(
         dplyr::select(

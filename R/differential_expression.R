@@ -23,7 +23,7 @@ diff_test_helper <- function(x,
   x_orig <- x
   disp_guess <- 0
 
-  if (expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (any(expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     if (relative_expr == TRUE) {
       x <- x / Size_Factor
     }
@@ -31,16 +31,16 @@ diff_test_helper <- function(x,
     if (is.null(disp_func) == FALSE) {
       disp_guess <- calculate_NB_dispersion_hint(disp_func, round(x_orig))
       if (is.null(disp_guess) == FALSE && disp_guess > 0 && is.na(disp_guess) == FALSE) {
-        if (expressionFamily@vfamily == "negbinomial") {
+        if (any(expressionFamily@vfamily == "negbinomial")) {
           expressionFamily <- negbinomial(isize = 1 / disp_guess)
         } else {
           expressionFamily <- negbinomial.size(size = 1 / disp_guess)
         }
       }
     }
-  } else if (expressionFamily@vfamily %in% c("uninormal")) {
+  } else if (any(expressionFamily@vfamily %in% c("uninormal"))) {
     f_expression <- x
-  } else if (expressionFamily@vfamily %in% c("binomialff")) {
+  } else if (any(expressionFamily@vfamily %in% c("binomialff"))) {
     f_expression <- x
   } else {
     f_expression <- log10(x)
@@ -48,7 +48,7 @@ diff_test_helper <- function(x,
 
   test_res <- tryCatch(
     {
-      if (expressionFamily@vfamily %in% c("binomialff")) {
+      if (any(expressionFamily@vfamily %in% c("binomialff"))) {
         if (verbose) {
           full_model_fit <- VGAM::vglm(stats::as.formula(fullModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
           reduced_model_fit <- VGAM::vglm(stats::as.formula(reducedModelFormulaStr), epsilon = 1e-1, family = expressionFamily)
@@ -148,7 +148,9 @@ differentialGeneTest <- function(cds,
     }
   }
 
-  if (relative_expr && cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  # any() because negbinomial() reports vfamily = c("negbinomial", "VGAMcategorical")
+  if (relative_expr && any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
+
     if (is.null(BiocGenerics::sizeFactors(cds)) || sum(is.na(BiocGenerics::sizeFactors(cds)))) {
       stop("Error: to call this function with relative_expr==TRUE, you must first call estimateSizeFactors() on the CellDataSet.")
     }

@@ -290,7 +290,9 @@ row_mean_var <- function(x) {
 }
 
 is_negbinomial_cds <- function(cds) {
-  cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")
+  # negbinomial() carries vfamily = c("negbinomial", "VGAMcategorical"), so
+  # collapse to a single logical: callers use the result in if()/&& conditions.
+  any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))
 }
 
 nb_family_label <- function(cds) {
