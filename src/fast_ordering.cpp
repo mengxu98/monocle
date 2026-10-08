@@ -247,7 +247,6 @@ List ddrtree_order_from_edges_cpp(
     }
     state[node] = curr_state;
   }
-  parent[root] = -1;
 
   IntegerVector order_out(order.size());
   for (int i = 0; i < static_cast<int>(order.size()); ++i) {
