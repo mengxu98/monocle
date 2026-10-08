@@ -3,7 +3,5 @@
 ^\.travis\.yml$
 ^\.git$
 
-examples/
-travis_setup.sh
 examples
 ^\.github$

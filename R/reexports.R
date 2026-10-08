@@ -10,7 +10,6 @@
 #' @import grid
 #' @import pheatmap
 #' @import VGAM
-#' @import slam
 #' @import HSMMSingleCell
 
 #' @importFrom stats median
