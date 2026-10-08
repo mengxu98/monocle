@@ -67,10 +67,6 @@ scale_pseudotime <- function(cds, verbose = FALSE) {
   return(cds)
 }
 
-# get_next_node_id <- function() {
-#   next_node <<- next_node + 1
-#   return(next_node)
-# }
 make_get_next_node_id <- function(start = 0L) {
   next_node <- start
   function() {
