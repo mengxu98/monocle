@@ -302,7 +302,8 @@ classifyCells <- function(cds, cth, frequency_thresh = NULL, enrichment_thresh =
 #'
 #' @export
 calculateMarkerSpecificity <- function(
-    cds, cth, remove_ambig = TRUE, remove_unknown = TRUE) {
+  cds, cth, remove_ambig = TRUE, remove_unknown = TRUE
+) {
   if (class(cds)[1] != "CellDataSet") {
     stop("Error cds is not of type 'CellDataSet'")
   }

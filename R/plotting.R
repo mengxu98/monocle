@@ -41,25 +41,26 @@ monocle_theme_opts <- function() {
 #' plot_cell_trajectory(lung, markers = "MYH3")
 #' }
 plot_cell_trajectory <- function(
-    cds,
-    x = 1,
-    y = 2,
-    color_by = "State",
-    show_tree = TRUE,
-    show_backbone = TRUE,
-    backbone_color = "black",
-    markers = NULL,
-    use_color_gradient = FALSE,
-    markers_linear = FALSE,
-    show_cell_names = FALSE,
-    show_state_number = FALSE,
-    cell_size = 1.5,
-    cell_link_size = 0.75,
-    cell_name_size = 2,
-    state_number_size = 2.9,
-    show_branch_points = TRUE,
-    theta = 0,
-    ...) {
+  cds,
+  x = 1,
+  y = 2,
+  color_by = "State",
+  show_tree = TRUE,
+  show_backbone = TRUE,
+  backbone_color = "black",
+  markers = NULL,
+  use_color_gradient = FALSE,
+  markers_linear = FALSE,
+  show_cell_names = FALSE,
+  show_state_number = FALSE,
+  cell_size = 1.5,
+  cell_link_size = 0.75,
+  cell_name_size = 2,
+  state_number_size = 2.9,
+  show_branch_points = TRUE,
+  theta = 0,
+  ...
+) {
   requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
@@ -183,13 +184,11 @@ plot_cell_trajectory <- function(
   }
 
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0) {
-    if (use_color_gradient) {
-    } else {
+    if (use_color_gradient) {} else {
       g <- g + geom_point(aes(color = !!rlang::sym(color_by)), na.rm = TRUE)
     }
   } else {
-    if (use_color_gradient) {
-    } else {
+    if (use_color_gradient) {} else {
       g <- g + geom_point(aes(color = !!rlang::sym(color_by)), size = I(cell_size), na.rm = TRUE)
     }
   }
@@ -256,19 +255,20 @@ plot_cell_trajectory <- function(
 #' plot_cell_trajectory(HSMM, markers = "MYH3")
 #' }
 plot_spanning_tree <- function(
-    cds,
-    x = 1,
-    y = 2,
-    color_by = "State",
-    show_tree = TRUE,
-    show_backbone = TRUE,
-    backbone_color = "black",
-    markers = NULL,
-    show_cell_names = FALSE,
-    cell_size = 1.5,
-    cell_link_size = 0.75,
-    cell_name_size = 2,
-    show_branch_points = TRUE) {
+  cds,
+  x = 1,
+  y = 2,
+  color_by = "State",
+  show_tree = TRUE,
+  show_backbone = TRUE,
+  backbone_color = "black",
+  markers = NULL,
+  show_cell_names = FALSE,
+  cell_size = 1.5,
+  cell_link_size = 0.75,
+  cell_name_size = 2,
+  show_branch_points = TRUE
+) {
   .Deprecated("plot_cell_trajectory")
   plot_cell_trajectory(
     cds = cds,
@@ -316,10 +316,11 @@ plot_spanning_tree <- function(
 #' plot_genes_violin(my_genes, grouping = "Hours", ncol = 2, min_expr = 0.1)
 #' }
 plot_genes_violin <- function(
-    cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
-    nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
-    plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
-    log_scale = TRUE) {
+  cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
+  nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
+  plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
+  log_scale = TRUE
+) {
   if (cds_subset@expressionFamily@vfamily %in% c(
     "negbinomial",
     "negbinomial.size"
@@ -437,17 +438,18 @@ plot_genes_violin <- function(
 #' plot_genes_jitter(my_genes, grouping = "Media", ncol = 2)
 #' }
 plot_genes_jitter <- function(
-    cds_subset,
-    grouping = "State",
-    min_expr = NULL,
-    cell_size = 0.75,
-    nrow = NULL,
-    ncol = 1,
-    panel_order = NULL,
-    color_by = NULL,
-    plot_trend = FALSE,
-    label_by_short_name = TRUE,
-    relative_expr = TRUE) {
+  cds_subset,
+  grouping = "State",
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = NULL,
+  plot_trend = FALSE,
+  label_by_short_name = TRUE,
+  relative_expr = TRUE
+) {
   if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
     integer_expression <- TRUE
   } else {
@@ -558,16 +560,17 @@ plot_genes_jitter <- function(
 #' plot_genes_positive_cells(MYOG_ID1, grouping = "Media", ncol = 2)
 #' }
 plot_genes_positive_cells <- function(
-    cds_subset,
-    grouping = "State",
-    min_expr = 0.1,
-    nrow = NULL,
-    ncol = 1,
-    panel_order = NULL,
-    plot_as_fraction = TRUE,
-    label_by_short_name = TRUE,
-    relative_expr = TRUE,
-    plot_limits = c(0, 100)) {
+  cds_subset,
+  grouping = "State",
+  min_expr = 0.1,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  plot_as_fraction = TRUE,
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  plot_limits = c(0, 100)
+) {
   percent <- NULL
 
   if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
@@ -665,18 +668,19 @@ plot_genes_positive_cells <- function(
 #' plot_genes_in_pseudotime(cds_subset, color_by = "Time")
 #' }
 plot_genes_in_pseudotime <- function(
-    cds_subset,
-    min_expr = NULL,
-    cell_size = 0.75,
-    nrow = NULL,
-    ncol = 1,
-    panel_order = NULL,
-    color_by = "State",
-    trend_formula = "~ sm.ns(Pseudotime, df=3)",
-    label_by_short_name = TRUE,
-    relative_expr = TRUE,
-    vertical_jitter = NULL,
-    horizontal_jitter = NULL) {
+  cds_subset,
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = "State",
+  trend_formula = "~ sm.ns(Pseudotime, df=3)",
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  vertical_jitter = NULL,
+  horizontal_jitter = NULL
+) {
   f_id <- NA
   Cell <- NA
   if (any(cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
@@ -796,14 +800,15 @@ plot_genes_in_pseudotime <- function(
 #' plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 #' }
 plot_clusters <- function(
-    cds,
-    clustering,
-    drawSummary = TRUE,
-    sumFun = mean_cl_boot,
-    ncol = NULL,
-    nrow = NULL,
-    row_samples = NULL,
-    callout_ids = NULL) {
+  cds,
+  clustering,
+  drawSummary = TRUE,
+  sumFun = mean_cl_boot,
+  ncol = NULL,
+  nrow = NULL,
+  row_samples = NULL,
+  callout_ids = NULL
+) {
   .Deprecated("plot_genes_heatmap")
   m <- as.data.frame(clustering$exprs)
   m$ids <- rownames(clustering$exprs)
@@ -887,21 +892,22 @@ plot_genes_heatmap <- function(...) {
 #'
 #' @export
 plot_pseudotime_heatmap <- function(
-    cds_subset,
-    cluster_rows = TRUE,
-    hclust_method = "ward.D2",
-    num_clusters = 6,
-    hmcols = NULL,
-    add_annotation_row = NULL,
-    add_annotation_col = NULL,
-    show_rownames = FALSE,
-    use_gene_short_name = TRUE,
-    norm_method = c("log", "vstExprs"),
-    scale_max = 3,
-    scale_min = -3,
-    trend_formula = "~sm.ns(Pseudotime, df=3)",
-    return_heatmap = FALSE,
-    cores = 1) {
+  cds_subset,
+  cluster_rows = TRUE,
+  hclust_method = "ward.D2",
+  num_clusters = 6,
+  hmcols = NULL,
+  add_annotation_row = NULL,
+  add_annotation_col = NULL,
+  show_rownames = FALSE,
+  use_gene_short_name = TRUE,
+  norm_method = c("log", "vstExprs"),
+  scale_max = 3,
+  scale_min = -3,
+  trend_formula = "~sm.ns(Pseudotime, df=3)",
+  return_heatmap = FALSE,
+  cores = 1
+) {
   num_clusters <- min(num_clusters, nrow(cds_subset))
   pseudocount <- 1
   newdata <- data.frame(Pseudotime = seq(min(pData(cds_subset)$Pseudotime), max(pData(cds_subset)$Pseudotime), length.out = 100))
@@ -1062,23 +1068,24 @@ plot_pseudotime_heatmap <- function(
 #'
 #' @export
 plot_genes_branched_pseudotime <- function(
-    cds,
-    branch_states = NULL,
-    branch_point = 1,
-    branch_labels = NULL,
-    method = "fitting",
-    min_expr = NULL,
-    cell_size = 0.75,
-    nrow = NULL,
-    ncol = 1,
-    panel_order = NULL,
-    color_by = "State",
-    expression_curve_linetype_by = "Branch",
-    trend_formula = "~ sm.ns(Pseudotime, df=3) * Branch",
-    reducedModelFormulaStr = NULL,
-    label_by_short_name = TRUE,
-    relative_expr = TRUE,
-    ...) {
+  cds,
+  branch_states = NULL,
+  branch_point = 1,
+  branch_labels = NULL,
+  method = "fitting",
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = "State",
+  expression_curve_linetype_by = "Branch",
+  trend_formula = "~ sm.ns(Pseudotime, df=3) * Branch",
+  reducedModelFormulaStr = NULL,
+  label_by_short_name = TRUE,
+  relative_expr = TRUE,
+  ...
+) {
   Branch <- NA
   if (is.null(reducedModelFormulaStr) == FALSE) {
     pval_df <- branchTest(cds,
@@ -1242,15 +1249,16 @@ plot_genes_branched_pseudotime <- function(
 #' @param round_expr a boolean that indicates whether cds_expr values should be rounded or not
 #' @return a ggplot2 plot object
 plot_coexpression_matrix <- function(
-    cds,
-    rowgenes,
-    colgenes,
-    relative_expr = TRUE,
-    min_expr = NULL,
-    cell_size = 0.85,
-    label_by_short_name = TRUE,
-    show_density = TRUE,
-    round_expr = FALSE) {
+  cds,
+  rowgenes,
+  colgenes,
+  relative_expr = TRUE,
+  min_expr = NULL,
+  cell_size = 0.85,
+  label_by_short_name = TRUE,
+  show_density = TRUE,
+  round_expr = FALSE
+) {
   gene_short_name <- NA
   f_id <- NA
   adjusted_expression.x <- NULL
@@ -1364,17 +1372,17 @@ table.ramp <- function(n, mid = 0.5, sill = 0.5, base = 1, height = 1) {
 }
 
 rgb.tables <- function(
-    n,
-    red = c(0.75, 0.25, 1),
-    green = c(0.5, 0.25, 1),
-    blue = c(0.25, 0.25, 1)) {
+  n,
+  red = c(0.75, 0.25, 1),
+  green = c(0.5, 0.25, 1),
+  blue = c(0.25, 0.25, 1)
+) {
   rr <- do.call("table.ramp", as.list(c(n, red)))
   gr <- do.call("table.ramp", as.list(c(n, green)))
   br <- do.call("table.ramp", as.list(c(n, blue)))
   grDevices::rgb(rr, gr, br)
 }
 
-matlab.like <- function(n) rgb.tables(n)
 
 matlab.like2 <- function(n) {
   rgb.tables(n,
@@ -1419,25 +1427,26 @@ blue2green2red <- matlab.like2
 #'
 #' @export
 plot_genes_branched_heatmap <- function(
-    cds_subset,
-    branch_point = 1,
-    branch_states = NULL,
-    branch_labels = c("Cell fate 1", "Cell fate 2"),
-    cluster_rows = TRUE,
-    hclust_method = "ward.D2",
-    num_clusters = 6,
-    hmcols = NULL,
-    branch_colors = c("#979797", "#F05662", "#7990C8"),
-    add_annotation_row = NULL,
-    add_annotation_col = NULL,
-    show_rownames = FALSE,
-    use_gene_short_name = TRUE,
-    scale_max = 3,
-    scale_min = -3,
-    norm_method = c("log", "vstExprs"),
-    trend_formula = "~sm.ns(Pseudotime, df=3) * Branch",
-    return_heatmap = FALSE,
-    cores = 1, ...) {
+  cds_subset,
+  branch_point = 1,
+  branch_states = NULL,
+  branch_labels = c("Cell fate 1", "Cell fate 2"),
+  cluster_rows = TRUE,
+  hclust_method = "ward.D2",
+  num_clusters = 6,
+  hmcols = NULL,
+  branch_colors = c("#979797", "#F05662", "#7990C8"),
+  add_annotation_row = NULL,
+  add_annotation_col = NULL,
+  show_rownames = FALSE,
+  use_gene_short_name = TRUE,
+  scale_max = 3,
+  scale_min = -3,
+  norm_method = c("log", "vstExprs"),
+  trend_formula = "~sm.ns(Pseudotime, df=3) * Branch",
+  return_heatmap = FALSE,
+  cores = 1, ...
+) {
   cds <- NA
   new_cds <- buildBranchCellDataSet(cds_subset,
     branch_states = branch_states,
@@ -1663,15 +1672,16 @@ plot_ordering_genes <- function(cds) {
 #' plot_cell_clusters(HSMM, markers = "MYH3")
 #' }
 plot_cell_clusters <- function(
-    cds,
-    x = 1,
-    y = 2,
-    color_by = "Cluster",
-    markers = NULL,
-    show_cell_names = FALSE,
-    cell_size = 1.5,
-    cell_name_size = 2,
-    ...) {
+  cds,
+  x = 1,
+  y = 2,
+  color_by = "Cluster",
+  markers = NULL,
+  show_cell_names = FALSE,
+  cell_size = 1.5,
+  cell_name_size = 2,
+  ...
+) {
   if (is.null(cds@reducedDimA) | length(pData(cds)$Cluster) == 0) {
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
@@ -1808,15 +1818,16 @@ plot_rho_delta <- function(cds, rho_threshold = NULL, delta_threshold = NULL) {
 #' plot_pc_variance_explained(HSMM)
 #' }
 plot_pc_variance_explained <- function(
-    cds,
-    max_components = 100,
-    norm_method = c("log", "vstExprs", "none"),
-    residualModelFormulaStr = NULL,
-    pseudo_expr = NULL,
-    return_all = FALSE,
-    use_existing_pc_variance = FALSE,
-    verbose = FALSE,
-    ...) {
+  cds,
+  max_components = 100,
+  norm_method = c("log", "vstExprs", "none"),
+  residualModelFormulaStr = NULL,
+  pseudo_expr = NULL,
+  return_all = FALSE,
+  use_existing_pc_variance = FALSE,
+  verbose = FALSE,
+  ...
+) {
   set.seed(2016)
   if (!is.null(cds@auxClusteringData[["tSNE"]]$variance_explained) & use_existing_pc_variance == T) {
     prop_varex <- cds@auxClusteringData[["tSNE"]]$variance_explained
@@ -1921,21 +1932,22 @@ traverseTree <- function(g, starting_cell, end_cells) {
 #' plot_complex_cell_trajectory(HSMM, markers = "MYH3")
 #' }
 plot_complex_cell_trajectory <- function(
-    cds,
-    x = 1,
-    y = 2,
-    root_states = NULL,
-    color_by = "State",
-    show_tree = TRUE,
-    show_backbone = TRUE,
-    backbone_color = "black",
-    markers = NULL,
-    show_cell_names = FALSE,
-    cell_size = 1.5,
-    cell_link_size = 0.75,
-    cell_name_size = 2,
-    show_branch_points = TRUE,
-    ...) {
+  cds,
+  x = 1,
+  y = 2,
+  root_states = NULL,
+  color_by = "State",
+  show_tree = TRUE,
+  show_backbone = TRUE,
+  backbone_color = "black",
+  markers = NULL,
+  show_cell_names = FALSE,
+  cell_size = 1.5,
+  cell_link_size = 0.75,
+  cell_name_size = 2,
+  show_branch_points = TRUE,
+  ...
+) {
   gene_short_name <- NA
   sample_name <- NA
   data_dim_1 <- NA
@@ -2113,23 +2125,24 @@ plot_complex_cell_trajectory <- function(
 #'
 #' @export
 plot_multiple_branches_heatmap <- function(
-    cds,
-    branches,
-    branches_name = NULL,
-    cluster_rows = TRUE,
-    hclust_method = "ward.D2",
-    num_clusters = 6,
-    hmcols = NULL,
-    add_annotation_row = NULL,
-    add_annotation_col = NULL,
-    show_rownames = FALSE,
-    use_gene_short_name = TRUE,
-    norm_method = c("vstExprs", "log"),
-    scale_max = 3,
-    scale_min = -3,
-    trend_formula = "~sm.ns(Pseudotime, df=3)",
-    return_heatmap = FALSE,
-    cores = 1) {
+  cds,
+  branches,
+  branches_name = NULL,
+  cluster_rows = TRUE,
+  hclust_method = "ward.D2",
+  num_clusters = 6,
+  hmcols = NULL,
+  add_annotation_row = NULL,
+  add_annotation_col = NULL,
+  show_rownames = FALSE,
+  use_gene_short_name = TRUE,
+  norm_method = c("vstExprs", "log"),
+  scale_max = 3,
+  scale_min = -3,
+  trend_formula = "~sm.ns(Pseudotime, df=3)",
+  return_heatmap = FALSE,
+  cores = 1
+) {
   pseudocount <- 1
   if (!(all(branches %in% pData(cds)$State)) & length(branches) == 1) {
     stop("This function only allows to make multiple branch plots where branches is included in the pData")
@@ -2314,20 +2327,21 @@ plot_multiple_branches_heatmap <- function(
 #'
 #' @export
 plot_multiple_branches_pseudotime <- function(
-    cds,
-    branches,
-    branches_name = NULL,
-    min_expr = NULL,
-    cell_size = 0.75,
-    norm_method = c("vstExprs", "log"),
-    nrow = NULL,
-    ncol = 1,
-    panel_order = NULL,
-    color_by = "Branch",
-    trend_formula = "~sm.ns(Pseudotime, df=3)",
-    label_by_short_name = TRUE,
-    TPM = FALSE,
-    cores = 1) {
+  cds,
+  branches,
+  branches_name = NULL,
+  min_expr = NULL,
+  cell_size = 0.75,
+  norm_method = c("vstExprs", "log"),
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  color_by = "Branch",
+  trend_formula = "~sm.ns(Pseudotime, df=3)",
+  label_by_short_name = TRUE,
+  TPM = FALSE,
+  cores = 1
+) {
   if (TPM) {
     exprs(cds) <- esApply(cds, 2, function(x) x / sum(x) * 1e6)
   }

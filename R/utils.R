@@ -19,11 +19,12 @@
 #' HSMM <- new("CellDataSet", exprs = as.matrix(fpkm_matrix_small), phenoData = pd, featureData = fd)
 #' }
 newCellDataSet <- function(
-    cellData,
-    phenoData = NULL,
-    featureData = NULL,
-    lowerDetectionLimit = 0.1,
-    expressionFamily = VGAM::negbinomial.size()) {
+  cellData,
+  phenoData = NULL,
+  featureData = NULL,
+  lowerDetectionLimit = 0.1,
+  expressionFamily = VGAM::negbinomial.size()
+) {
   if (!("gene_short_name" %in% colnames(featureData))) {
     log_message("featureData must contain a column verbatim named 'gene_short_name' for certain functions", message_type = "warning")
   }
@@ -65,7 +66,8 @@ newCellDataSet <- function(
 }
 
 sparseApply <- function(
-    Sp_X, MARGIN, FUN, convert_to_dense, ...) {
+  Sp_X, MARGIN, FUN, convert_to_dense, ...
+) {
   if (convert_to_dense) {
     if (MARGIN == 1) {
       Sp_X <- Matrix::t(Sp_X)
@@ -140,7 +142,8 @@ sparseParCApply <- function(cl = NULL, x, FUN, convert_to_dense, ...) {
 #'
 #' @export
 mcesApply <- function(
-    X, MARGIN, FUN, required_packages, cores = 1, convert_to_dense = TRUE, ...) {
+  X, MARGIN, FUN, required_packages, cores = 1, convert_to_dense = TRUE, ...
+) {
   parent <- environment(FUN)
   if (is.null(parent)) {
     parent <- emptyenv()
@@ -177,7 +180,8 @@ mcesApply <- function(
 }
 
 smartEsApply <- function(
-    X, MARGIN, FUN, convert_to_dense, ...) {
+  X, MARGIN, FUN, convert_to_dense, ...
+) {
   parent <- environment(FUN)
   if (is.null(parent)) {
     parent <- emptyenv()
@@ -253,21 +257,6 @@ detectGenes <- function(cds, min_expr = NULL) {
   cds
 }
 
-asSparseMatrix <- function(simpleTripletMatrix) {
-  retVal <- sparseMatrix(
-    i = simpleTripletMatrix[["i"]],
-    j = simpleTripletMatrix[["j"]],
-    x = simpleTripletMatrix[["v"]],
-    dims = c(
-      simpleTripletMatrix[["nrow"]],
-      simpleTripletMatrix[["ncol"]]
-    )
-  )
-  if (!is.null(simpleTripletMatrix[["dimnames"]])) {
-    dimnames(retVal) <- simpleTripletMatrix[["dimnames"]]
-  }
-  return(retVal)
-}
 
 asSlamMatrix <- function(sp_mat) {
   sp <- Matrix::summary(sp_mat)
@@ -383,10 +372,11 @@ fast_nb_cpp_call <- function(cds, sparse_fun, dense_fun, ...) {
 }
 
 estimateSizeFactorsForSparseMatrix <- function(
-    counts,
-    locfunc = median,
-    round_exprs = TRUE,
-    method = "mean-geometric-mean-total") {
+  counts,
+  locfunc = median,
+  round_exprs = TRUE,
+  method = "mean-geometric-mean-total"
+) {
   CM <- counts
   if (round_exprs) {
     CM <- round(CM)
@@ -437,10 +427,11 @@ estimateSizeFactorsForSparseMatrix <- function(
 }
 
 estimateSizeFactorsForDenseMatrix <- function(
-    counts,
-    locfunc = median,
-    round_exprs = TRUE,
-    method = "mean-geometric-mean-total") {
+  counts,
+  locfunc = median,
+  round_exprs = TRUE,
+  method = "mean-geometric-mean-total"
+) {
   CM <- counts
   if (round_exprs) {
     CM <- round(CM)
@@ -495,10 +486,11 @@ estimateSizeFactorsForDenseMatrix <- function(
 #' @param method A character to specify the size factor calculation appraoches. It can be either "mean-geometric-mean-total" (default),
 #' "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
 estimateSizeFactorsForMatrix <- function(
-    counts,
-    locfunc = median,
-    round_exprs = TRUE,
-    method = "mean-geometric-mean-total") {
+  counts,
+  locfunc = median,
+  round_exprs = TRUE,
+  method = "mean-geometric-mean-total"
+) {
   if (isSparseMatrix(counts)) {
     estimateSizeFactorsForSparseMatrix(
       counts,

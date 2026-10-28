@@ -20,12 +20,13 @@
 #' @return a CellDataSet with the duplicated cells and stretched branches
 #' @export
 buildBranchCellDataSet <- function(
-    cds,
-    progenitor_method = c("sequential_split", "duplicate"),
-    branch_states = NULL,
-    branch_point = 1,
-    branch_labels = NULL,
-    stretch = TRUE) {
+  cds,
+  progenitor_method = c("sequential_split", "duplicate"),
+  branch_states = NULL,
+  branch_point = 1,
+  branch_labels = NULL,
+  stretch = TRUE
+) {
   if (is.null(pData(cds)$State) | is.null(pData(cds)$Pseudotime)) {
     stop("Please first order the cells in pseudotime using orderCells()")
   }
@@ -311,16 +312,17 @@ buildBranchCellDataSet <- function(
 #' @return a data frame containing the p values and q-values from the likelihood ratio tests on the parallel arrays of models.
 #' @export
 branchTest <- function(
-    cds,
-    fullModelFormulaStr = "~sm.ns(Pseudotime, df = 3)*Branch",
-    reducedModelFormulaStr = "~sm.ns(Pseudotime, df = 3)",
-    branch_states = NULL,
-    branch_point = 1,
-    relative_expr = TRUE,
-    cores = 1,
-    branch_labels = NULL,
-    verbose = FALSE,
-    ...) {
+  cds,
+  fullModelFormulaStr = "~sm.ns(Pseudotime, df = 3)*Branch",
+  reducedModelFormulaStr = "~sm.ns(Pseudotime, df = 3)",
+  branch_states = NULL,
+  branch_point = 1,
+  relative_expr = TRUE,
+  cores = 1,
+  branch_labels = NULL,
+  verbose = FALSE,
+  ...
+) {
   if ("Branch" %in% all.vars(terms(stats::as.formula(fullModelFormulaStr)))) {
     cds_subset <- buildBranchCellDataSet(
       cds = cds,
@@ -368,19 +370,20 @@ branchTest <- function(
 #' @return a data frame containing the ABCs (Area under curves) score as the first column and other meta information from fData
 #' @export
 calABCs <- function(
-    cds,
-    trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
-    branch_point = 1,
-    trajectory_states = NULL,
-    relative_expr = TRUE,
-    stretch = TRUE,
-    cores = 1,
-    verbose = F,
-    min_expr = 0.5,
-    integer_expression = FALSE,
-    num = 5000,
-    branch_labels = NULL,
-    ...) {
+  cds,
+  trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
+  branch_point = 1,
+  trajectory_states = NULL,
+  relative_expr = TRUE,
+  stretch = TRUE,
+  cores = 1,
+  verbose = F,
+  min_expr = 0.5,
+  integer_expression = FALSE,
+  num = 5000,
+  branch_labels = NULL,
+  ...
+) {
   ABC_method <- "integral"
   if (!is.null(trajectory_states)) {
     if (length(trajectory_states) != 2) {
@@ -494,23 +497,24 @@ calABCs <- function(
 #'
 #' @export
 calILRs <- function(
-    cds,
-    trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
-    branch_point = 1,
-    trajectory_states = NULL,
-    relative_expr = TRUE,
-    stretch = TRUE,
-    cores = 1,
-    ILRs_limit = 3,
-    label_by_short_name = TRUE,
-    useVST = FALSE,
-    round_exprs = FALSE,
-    output_type = "all",
-    branch_labels = NULL,
-    file = NULL,
-    return_all = F,
-    verbose = FALSE,
-    ...) {
+  cds,
+  trend_formula = "~sm.ns(Pseudotime, df = 3)*Branch",
+  branch_point = 1,
+  trajectory_states = NULL,
+  relative_expr = TRUE,
+  stretch = TRUE,
+  cores = 1,
+  ILRs_limit = 3,
+  label_by_short_name = TRUE,
+  useVST = FALSE,
+  round_exprs = FALSE,
+  output_type = "all",
+  branch_labels = NULL,
+  file = NULL,
+  return_all = F,
+  verbose = FALSE,
+  ...
+) {
   if (!is.null(trajectory_states)) {
     if (length(trajectory_states) != 2) {
       stop("Sorry, this function only supports the calculation of ILRs between TWO branch trajectories")
@@ -677,24 +681,25 @@ calILRs <- function(
 #'
 #' @export
 detectBifurcationPoint <- function(
-    str_log_df = NULL,
-    ILRs_threshold = 0.1,
-    detect_all = TRUE,
-    cds = cds,
-    Branch = "Branch",
-    branch_point = NULL,
-    branch_states = c(2, 3),
-    stretch = TRUE,
-    cores = 1,
-    trend_formula = "~sm.ns(Pseudotime, df = 3)",
-    ILRs_limit = 3,
-    relative_expr = TRUE,
-    label_by_short_name = TRUE,
-    useVST = FALSE,
-    round_exprs = FALSE,
-    output_type = "all",
-    return_cross_point = TRUE,
-    file = "bifurcation_heatmap", verbose = FALSE, ...) {
+  str_log_df = NULL,
+  ILRs_threshold = 0.1,
+  detect_all = TRUE,
+  cds = cds,
+  Branch = "Branch",
+  branch_point = NULL,
+  branch_states = c(2, 3),
+  stretch = TRUE,
+  cores = 1,
+  trend_formula = "~sm.ns(Pseudotime, df = 3)",
+  ILRs_limit = 3,
+  relative_expr = TRUE,
+  label_by_short_name = TRUE,
+  useVST = FALSE,
+  round_exprs = FALSE,
+  output_type = "all",
+  return_cross_point = TRUE,
+  file = "bifurcation_heatmap", verbose = FALSE, ...
+) {
   if (is.null(str_log_df)) {
     if (Branch == "Branch") output_type <- "after_bifurcation"
 

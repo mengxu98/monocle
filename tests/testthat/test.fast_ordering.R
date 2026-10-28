@@ -62,7 +62,8 @@ test_that("ddrtree_order_from_edges_cpp matches igraph::dfs-based ordering", {
     dp[cbind(vnames[edges[, 2]], vnames[edges[, 1]])] <- weights
 
     traversal <- igraph::dfs(
-      g, root = vnames[root], mode = "all",
+      g,
+      root = vnames[root], mode = "all",
       unreachable = FALSE, parent = TRUE
     )
     mst_parent <- as.numeric(traversal$parent)

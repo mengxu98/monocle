@@ -9,13 +9,14 @@
 #' @name fit_model_helper
 #' @description test
 fit_model_helper <- function(
-    x,
-    modelFormulaStr,
-    expressionFamily,
-    relative_expr,
-    disp_func = NULL,
-    verbose = FALSE,
-    ...) {
+  x,
+  modelFormulaStr,
+  expressionFamily,
+  relative_expr,
+  disp_func = NULL,
+  verbose = FALSE,
+  ...
+) {
   modelFormulaStr <- paste("f_expression", modelFormulaStr,
     sep = ""
   )
@@ -250,24 +251,27 @@ genSmoothCurves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, d
   expressionFamily <- cds@expressionFamily
 
   if (is_negbinomial_cds(cds) && identical(response_type, "response")) {
-    curve_cpp <- tryCatch({
-      des <- nb_design_for_newdata(trend_formula, pData(cds), new_data)
-      disp_guesses <- nb_dispersion_guesses(cds)
-      sf <- nb_size_factors(cds, relative_expr)
-      res <- fast_nb_cpp_call(
-        cds,
-        fast_nb_fit_predict_sparse_cpp,
-        fast_nb_fit_predict_dense_cpp,
-        des$X_fit, des$X_new, disp_guesses, sf, relative_expr, FALSE, nb_num_threads(cores)
-      )
-      M <- thisutils::as_matrix(res$mu_pred)
-      rownames(M) <- rownames(fData(cds))
-      colnames(M) <- rownames(new_data)
-      M
-    }, error = function(e) {
-      warning("Fast C++ genSmoothCurves fallback to VGAM: ", e$message, call. = FALSE)
-      NULL
-    })
+    curve_cpp <- tryCatch(
+      {
+        des <- nb_design_for_newdata(trend_formula, pData(cds), new_data)
+        disp_guesses <- nb_dispersion_guesses(cds)
+        sf <- nb_size_factors(cds, relative_expr)
+        res <- fast_nb_cpp_call(
+          cds,
+          fast_nb_fit_predict_sparse_cpp,
+          fast_nb_fit_predict_dense_cpp,
+          des$X_fit, des$X_new, disp_guesses, sf, relative_expr, FALSE, nb_num_threads(cores)
+        )
+        M <- thisutils::as_matrix(res$mu_pred)
+        rownames(M) <- rownames(fData(cds))
+        colnames(M) <- rownames(new_data)
+        M
+      },
+      error = function(e) {
+        warning("Fast C++ genSmoothCurves fallback to VGAM: ", e$message, call. = FALSE)
+        NULL
+      }
+    )
     if (!is.null(curve_cpp)) {
       return(curve_cpp)
     }
@@ -338,25 +342,28 @@ genSmoothCurveResiduals <- function(cds, trend_formula = "~sm.ns(Pseudotime, df 
   expressionFamily <- cds@expressionFamily
 
   if (is_negbinomial_cds(cds) && identical(residual_type, "response")) {
-    resid_cpp <- tryCatch({
-      pd <- pData(cds)
-      des <- nb_design_for_newdata(trend_formula, pd, pd)
-      disp_guesses <- nb_dispersion_guesses(cds)
-      sf <- nb_size_factors(cds, relative_expr)
-      res <- fast_nb_cpp_call(
-        cds,
-        fast_nb_fit_predict_sparse_cpp,
-        fast_nb_fit_predict_dense_cpp,
-        des$X_fit, des$X_new, disp_guesses, sf, relative_expr, TRUE, nb_num_threads(cores)
-      )
-      M <- thisutils::as_matrix(res$resid)
-      rownames(M) <- rownames(fData(cds))
-      colnames(M) <- rownames(pd)
-      M
-    }, error = function(e) {
-      warning("Fast C++ genSmoothCurveResiduals fallback to VGAM: ", e$message, call. = FALSE)
-      NULL
-    })
+    resid_cpp <- tryCatch(
+      {
+        pd <- pData(cds)
+        des <- nb_design_for_newdata(trend_formula, pd, pd)
+        disp_guesses <- nb_dispersion_guesses(cds)
+        sf <- nb_size_factors(cds, relative_expr)
+        res <- fast_nb_cpp_call(
+          cds,
+          fast_nb_fit_predict_sparse_cpp,
+          fast_nb_fit_predict_dense_cpp,
+          des$X_fit, des$X_new, disp_guesses, sf, relative_expr, TRUE, nb_num_threads(cores)
+        )
+        M <- thisutils::as_matrix(res$resid)
+        rownames(M) <- rownames(fData(cds))
+        colnames(M) <- rownames(pd)
+        M
+      },
+      error = function(e) {
+        warning("Fast C++ genSmoothCurveResiduals fallback to VGAM: ", e$message, call. = FALSE)
+        NULL
+      }
+    )
     if (!is.null(resid_cpp)) {
       return(resid_cpp)
     }
@@ -498,7 +505,8 @@ vstExprs <- function(cds, dispModelName = "blind", expr_matrix = NULL, round_val
 }
 
 disp_calc_helper_NB <- function(
-    cds, expressionFamily, min_cells_detected) {
+  cds, expressionFamily, min_cells_detected
+) {
   rounded <- round(exprs(cds))
   nzGenes <- Matrix::rowSums(rounded > cds@lowerDetectionLimit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
@@ -539,15 +547,15 @@ disp_calc_helper_NB <- function(
 #' @param removeOutliers a boolean it determines whether or not outliers from the data should be removed
 #' @param verbose Whether to show detailed running information.
 estimateDispersionsForCellDataSet <- function(
-    cds,
-    modelFormulaStr,
-    relative_expr,
-    min_cells_detected,
-    removeOutliers,
-    verbose = FALSE) {
+  cds,
+  modelFormulaStr,
+  relative_expr,
+  min_cells_detected,
+  removeOutliers,
+  verbose = FALSE
+) {
   # any() because negbinomial() reports vfamily = c("negbinomial", "VGAMcategorical")
   if (!any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
-
     stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
   }
 
@@ -646,7 +654,8 @@ calculate_NB_dispersion_hint <- function(disp_func, f_expression, expr_selection
 }
 
 calculate_QP_dispersion_hint <- function(
-    disp_func, f_expression, expr_selection_func = mean) {
+  disp_func, f_expression, expr_selection_func = mean
+) {
   expr_hint <- expr_selection_func(f_expression)
   if (expr_hint > 0 && is.null(expr_hint) == FALSE) {
     disp_guess_fit <- disp_func(expr_hint)
