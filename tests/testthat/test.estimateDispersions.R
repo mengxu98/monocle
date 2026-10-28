@@ -21,7 +21,6 @@ test_that("estimateDispersion() properly validates its input", {
   expect_error(estimateDispersions(HSMM))
 
 
-
   lung <- load_lung()
   lung_pData <- pData(lung)
   expect_equal(colnames(lung_pData), c(

@@ -20,11 +20,12 @@
 #' plot_clusters(HSMM_filtered[ordering_genes, ], clusters)
 #' }
 clusterGenes <- function(
-    expr_matrix,
-    k,
-    method = function(x) {
-      stats::as.dist((1 - stats::cor(Matrix::t(x))) / 2)
-    }, ...) {
+  expr_matrix,
+  k,
+  method = function(x) {
+    stats::as.dist((1 - stats::cor(Matrix::t(x))) / 2)
+  }, ...
+) {
   expr_matrix <- expr_matrix[rowSums(is.na(expr_matrix)) == 0, ]
   expr_matrix <- expr_matrix[is.nan(rowSums(expr_matrix)) == FALSE, ]
   expr_matrix[is.na(expr_matrix)] <- 0
@@ -83,24 +84,25 @@ clusterGenes <- function(
 #'
 #' @export
 clusterCells <- function(
-    cds,
-    skip_rho_sigma = F,
-    num_clusters = NULL,
-    inspect_rho_sigma = F,
-    rho_threshold = NULL,
-    delta_threshold = NULL,
-    peaks = NULL,
-    gaussian = TRUE,
-    cell_type_hierarchy = NULL,
-    frequency_thresh = NULL,
-    enrichment_thresh = NULL,
-    clustering_genes = NULL,
-    k = 50,
-    louvain_iter = 1,
-    weight = FALSE,
-    method = c("densityPeak", "louvain", "DDRTree"),
-    verbose = F,
-    ...) {
+  cds,
+  skip_rho_sigma = F,
+  num_clusters = NULL,
+  inspect_rho_sigma = F,
+  rho_threshold = NULL,
+  delta_threshold = NULL,
+  peaks = NULL,
+  gaussian = TRUE,
+  cell_type_hierarchy = NULL,
+  frequency_thresh = NULL,
+  enrichment_thresh = NULL,
+  clustering_genes = NULL,
+  k = 50,
+  louvain_iter = 1,
+  weight = FALSE,
+  method = c("densityPeak", "louvain", "DDRTree"),
+  verbose = F,
+  ...
+) {
   method <- match.arg(method)
 
   if (ncol(cds) > 500000) {

@@ -150,7 +150,6 @@ differentialGeneTest <- function(cds,
 
   # any() because negbinomial() reports vfamily = c("negbinomial", "VGAMcategorical")
   if (relative_expr && any(cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size"))) {
-
     if (is.null(BiocGenerics::sizeFactors(cds)) || sum(is.na(BiocGenerics::sizeFactors(cds)))) {
       stop("Error: to call this function with relative_expr==TRUE, you must first call estimateSizeFactors() on the CellDataSet.")
     }
@@ -160,37 +159,40 @@ differentialGeneTest <- function(cds,
   diff_test_res <- NULL
 
   if (use_fast_cpp) {
-    try_cpp <- tryCatch({
-      pd <- pData(cds)
-      X_full <- nb_design_matrix(fullModelFormulaStr, pd)
-      X_red <- nb_design_matrix(reducedModelFormulaStr, pd)
-      if (nrow(X_full) != ncol(cds) || nrow(X_red) != ncol(cds)) {
-        stop("design matrix rows do not match the number of cells")
+    try_cpp <- tryCatch(
+      {
+        pd <- pData(cds)
+        X_full <- nb_design_matrix(fullModelFormulaStr, pd)
+        X_red <- nb_design_matrix(reducedModelFormulaStr, pd)
+        if (nrow(X_full) != ncol(cds) || nrow(X_red) != ncol(cds)) {
+          stop("design matrix rows do not match the number of cells")
+        }
+
+        disp_guesses <- nb_dispersion_guesses(cds)
+        sf <- nb_size_factors(cds, relative_expr)
+        num_threads <- nb_num_threads(cores)
+        family_name <- nb_family_label(cds)
+
+        res <- fast_nb_cpp_call(
+          cds,
+          fast_diff_test_sparse_cpp,
+          fast_diff_test_dense_cpp,
+          X_full, X_red, disp_guesses, sf, relative_expr, num_threads, family_name
+        )
+
+        data.frame(
+          status = as.character(res$status),
+          family = as.character(res$family),
+          pval = as.numeric(res$pval),
+          row.names = rownames(cds),
+          stringsAsFactors = FALSE
+        )
+      },
+      error = function(e) {
+        warning("Fast C++ differentialGeneTest fallback to VGAM: ", e$message, call. = FALSE)
+        NULL
       }
-
-      disp_guesses <- nb_dispersion_guesses(cds)
-      sf <- nb_size_factors(cds, relative_expr)
-      num_threads <- nb_num_threads(cores)
-      family_name <- nb_family_label(cds)
-
-      res <- fast_nb_cpp_call(
-        cds,
-        fast_diff_test_sparse_cpp,
-        fast_diff_test_dense_cpp,
-        X_full, X_red, disp_guesses, sf, relative_expr, num_threads, family_name
-      )
-
-      data.frame(
-        status = as.character(res$status),
-        family = as.character(res$family),
-        pval = as.numeric(res$pval),
-        row.names = rownames(cds),
-        stringsAsFactors = FALSE
-      )
-    }, error = function(e) {
-      warning("Fast C++ differentialGeneTest fallback to VGAM: ", e$message, call. = FALSE)
-      NULL
-    })
+    )
 
     if (!is.null(try_cpp)) {
       diff_test_res <- try_cpp

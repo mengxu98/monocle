@@ -5,7 +5,6 @@ v3dname <- "../testdata/cr3.0"
 v2dname <- "../testdata/cr2.0"
 
 
-
 test_that("Cell Ranger 3.0 Filtered Data Loading", {
   cds <- load_cellranger_data(v3dname)
   expect_equal(as.character(fData(cds)$gene_short_name[1]), "RP11-34P13.3")
@@ -14,8 +13,10 @@ test_that("Cell Ranger 3.0 Filtered Data Loading", {
   expect_is(cds, "CellDataSet")
 })
 
-test_that("Cell Ranger 3.0 No Data Fails", {
-  expect_error(load_cellranger_data(v3dname, barcode_filtered = FALSE))
+test_that("Cell Ranger 2.0 and 3.0 reject missing raw data", {
+  for (path in c(v2dname, v3dname)) {
+    expect_error(load_cellranger_data(path, barcode_filtered = FALSE))
+  }
 })
 
 test_that("Cell Ranger 2.0 Filtered Data Loading", {
@@ -26,9 +27,6 @@ test_that("Cell Ranger 2.0 Filtered Data Loading", {
   expect_is(cds, "CellDataSet")
 })
 
-test_that("Cell Ranger 2.0 No Data Fails", {
-  expect_error(load_cellranger_data(v3dname, barcode_filtered = FALSE))
-})
 
 # Now make sure raw data works
 test_that("load_cellranger_matrix on 2.0 raw matrices", {

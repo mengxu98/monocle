@@ -8,11 +8,14 @@ force_vgam_path <- function(code) {
   unlockBinding("is_negbinomial_cds", ns)
   assign("is_negbinomial_cds", function(cds) FALSE, envir = ns)
   lockBinding("is_negbinomial_cds", ns)
-  on.exit({
-    unlockBinding("is_negbinomial_cds", ns)
-    assign("is_negbinomial_cds", orig, envir = ns)
-    lockBinding("is_negbinomial_cds", ns)
-  }, add = TRUE)
+  on.exit(
+    {
+      unlockBinding("is_negbinomial_cds", ns)
+      assign("is_negbinomial_cds", orig, envir = ns)
+      lockBinding("is_negbinomial_cds", ns)
+    },
+    add = TRUE
+  )
   force(code)
 }
 

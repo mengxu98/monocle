@@ -1,72 +1,3 @@
-run_pca <- function(data, ...) {
-  res <- stats::prcomp(data, center = F, scale = F)
-  res$x
-}
-
-scale_pseudotime <- function(cds, verbose = FALSE) {
-  Parent <- NA
-  pd <- pData(cds)
-  pd$Cell_name <- row.names(pd)
-  range_df <- plyr::ddply(pd, .(State), function(x) {
-    min_max <- range(x$Pseudotime)
-    min_cell <- subset(x, Pseudotime %in% min_max[1])
-    max_cell <- subset(x, Pseudotime %in% min_max[2])
-    min_cell$fate_type <- "Start"
-    max_cell$fate_type <- "End"
-    rbind(min_cell, max_cell)
-  })
-
-  adj_list <- data.frame(Source = subset(range_df, length(Parent) > 0 & !is.na(Parent))[, "Parent"], Target = subset(range_df, length(Parent) > 0 & !is.na(Parent))[, "Cell_name"])
-  adj_list$Source <- pd[as.character(adj_list$Source), "State"]
-  adj_list$Target <- pd[as.character(adj_list$Target), "State"]
-
-  uniq_cell_list <- unique(c(as.character(adj_list$Source), as.character(adj_list$Target)))
-  adj_mat <- matrix(rep(0, length(uniq_cell_list)^2), nrow = length(uniq_cell_list), ncol = length(uniq_cell_list), dimnames = list(uniq_cell_list, uniq_cell_list))
-  adj_mat[thisutils::as_matrix(adj_list)] <- 1
-  net <- igraph::graph_from_adjacency_matrix(thisutils::as_matrix(adj_mat), mode = "directed", weighted = NULL, diag = FALSE)
-
-  net_leaves <- which(igraph::degree(net, v = V(net), mode = "out") == 0, useNames = T)
-
-  pd$scale_pseudotime <- NA
-
-  for (i in net_leaves) {
-    path_vertex <- as.vector(
-      igraph::all_shortest_paths(
-        net,
-        from = 1, to = i, mode = "out"
-      )$res[[1]]
-    )
-    pd_subset <- subset(pd, State %in% path_vertex & is.na(scale_pseudotime))
-
-    min_cell_name <- row.names(subset(pd_subset, Pseudotime == min(Pseudotime)))
-
-    if (!is.na(pd[min_cell_name, "Parent"])) {
-      parent_min_cell <- as.character(pd[min_cell_name, "Parent"])
-      subset_min_pseudo <- pd[parent_min_cell, "Pseudotime"]
-      scale_pseudotime_ini <- pd[parent_min_cell, "scale_pseudotime"]
-      scaling_factor <- (100 - pd[parent_min_cell, "scale_pseudotime"]) / c(max(pd_subset$Pseudotime) - subset_min_pseudo)
-    } else {
-      subset_min_pseudo <- min(pd[, "Pseudotime"])
-      scale_pseudotime_ini <- 0
-      scaling_factor <- 100 / c(max(pd_subset$Pseudotime) - min(pd_subset$Pseudotime))
-    }
-
-    pseudotime_scaled <- (pd_subset$Pseudotime - subset_min_pseudo) * scaling_factor + scale_pseudotime_ini
-
-    log_message("{i}\t{range(pseudotime_scaled)[1]}\t{range(pseudotime_scaled)[2]}", verbose = verbose)
-
-    pd[row.names(pd_subset), "ori_pseudotime"] <- pd[row.names(pd_subset), "Pseudotime"]
-    pd[row.names(pd_subset), "Pseudotime"] <- pseudotime_scaled
-  }
-  scale_pseudotime <- (pd_subset$Pseudotime - subset_min_pseudo) * scaling_factor + scale_pseudotime_ini
-  log_message("{i}\t{range(scale_pseudotime)[1]}\t{range(scale_pseudotime)[2]}")
-  pd[row.names(pd_subset), "scale_pseudotime"] <- scale_pseudotime
-
-  pData(cds) <- pd
-
-  return(cds)
-}
-
 make_get_next_node_id <- function(start = 0L) {
   next_node <- start
   function() {
@@ -171,54 +102,6 @@ pq_helper <- function(mst, use_weights = TRUE, root_node = NULL) {
   return(list(root = root_node_id, subtree = new_subtree))
 }
 
-make_canonical <- function(pq_tree) {
-  type <- NA
-  canonical_pq <- pq_tree
-
-  V(canonical_pq)[type == "P" & igraph::degree(canonical_pq, mode = "out") == 2]$color <- "black"
-  V(canonical_pq)[type == "P" & igraph::degree(canonical_pq, mode = "out") == 2]$type <- "Q"
-
-  single_child_p <- V(canonical_pq)[type == "P" & igraph::degree(canonical_pq, mode = "out") == 1]
-  V(canonical_pq)[type == "P" & igraph::degree(canonical_pq, mode = "out") == 1]$color <- "blue"
-
-  for (p_node in single_child_p)
-  {
-    child_of_p_node <- igraph::neighbors(canonical_pq, p_node, mode = "out")
-    parent_of_p_node <- igraph::neighbors(canonical_pq, p_node, mode = "in")
-
-    for (child_of_p in child_of_p_node)
-    {
-      canonical_pq[parent_of_p_node, child_of_p] <- TRUE
-    }
-  }
-
-  canonical_pq <- igraph::delete_vertices(
-    canonical_pq, V(canonical_pq)[type == "P" & igraph::degree(canonical_pq, mode = "out") == 1]
-  )
-  return(canonical_pq)
-}
-
-count_leaf_descendents <- function(pq_tree, curr_node, children_counts) {
-  if (V(pq_tree)[curr_node]$type == "leaf") {
-    children_counts[curr_node] <- 0
-    return(children_counts)
-  } else {
-    children_count <- 0
-    children <- igraph::neighbors(pq_tree, curr_node, mode = "out")
-    for (i in seq_along(children))
-    {
-      child <- names(children)[i]
-      children_counts <- count_leaf_descendents(pq_tree, child, children_counts)
-      if (V(pq_tree)[child]$type == "leaf") {
-        children_count <- children_count + 1
-      } else {
-        children_count <- children_count + children_counts[child]
-      }
-    }
-    children_counts[curr_node] <- children_count
-    return(children_counts)
-  }
-}
 
 #' Return an ordering for a P node in the PQ tree
 #' @param q_level_list A list of Q nodes in the PQ tree
@@ -335,28 +218,6 @@ order_q_node <- function(q_level_list, dist_matrix) {
   return(list(ql = q_levels, wt = min(path_weights)))
 }
 
-measure_diameter_path <- function(pq_tree, curr_node, path_lengths) {
-  if (V(pq_tree)[curr_node]$type != "Q") {
-    path_lengths[curr_node] <- 0
-    return(path_lengths)
-  } else {
-    children_count <- 0
-    children <- igraph::neighbors(pq_tree, curr_node, mode = "out")
-    for (i in seq_along(children))
-    {
-      child <- names(children)[i]
-      children_counts <- count_leaf_descendents(pq_tree, child, children_counts)
-      if (V(pq_tree)[child]$type == "leaf") {
-        children_count <- children_count + 1
-      } else {
-        children_count <- children_count + children_counts[child]
-      }
-    }
-
-    path_lengths[curr_node] <- children_count
-    return(children_counts)
-  }
-}
 
 assign_cell_lineage <- function(pq_tree, curr_node, assigned_state, node_states) {
   if (V(pq_tree)[curr_node]$type == "leaf") {
@@ -722,40 +583,43 @@ extract_ddrtree_ordering <- function(cds, root_cell, verbose = T) {
   dp_mst <- minSpanningTree(cds)
 
   if (isTRUE(getOption("monocle.fast_ordering", TRUE))) {
-    fast_df <- tryCatch({
-      # Index the distances directly: dp is a Matrix of class numeric for the
-      # center-level distances and may be sparse for the cell-level ones, where
-      # as.matrix() would need n_cells^2 memory.
-      mst_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
-      if (length(mst_edges) == 0) {
-        mst_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+    fast_df <- tryCatch(
+      {
+        # Index the distances directly: dp is a Matrix of class numeric for the
+        # center-level distances and may be sparse for the cell-level ones, where
+        # as.matrix() would need n_cells^2 memory.
+        mst_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
+        if (length(mst_edges) == 0) {
+          mst_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+        }
+        mst_edges <- matrix(as.integer(mst_edges), ncol = 2L)
+        vertex_names <- as.character(igraph::V(dp_mst)$name)
+        root_idx <- match(root_cell, vertex_names)
+        if (is.na(root_idx)) {
+          root_idx <- 1L
+        }
+        fast_ordering <- ddrtree_order_from_edges_cpp(
+          n_vertices = ncol(dp),
+          edges = mst_edges,
+          weights = as.numeric(dp[cbind(mst_edges[, 1], mst_edges[, 2])]),
+          root_cell = root_idx
+        )
+        parent_names <- rep(NA_character_, length(vertex_names))
+        has_parent <- fast_ordering$parent > 0L
+        parent_names[has_parent] <- vertex_names[fast_ordering$parent[has_parent]]
+        data.frame(
+          sample_name = vertex_names,
+          cell_state = factor(fast_ordering$state),
+          pseudo_time = as.vector(fast_ordering$pseudotime),
+          parent = parent_names,
+          stringsAsFactors = FALSE
+        )
+      },
+      error = function(e) {
+        warning("Fast C++ DDRTree ordering fallback to R: ", e$message, call. = FALSE)
+        NULL
       }
-      mst_edges <- matrix(as.integer(mst_edges), ncol = 2L)
-      vertex_names <- as.character(igraph::V(dp_mst)$name)
-      root_idx <- match(root_cell, vertex_names)
-      if (is.na(root_idx)) {
-        root_idx <- 1L
-      }
-      fast_ordering <- ddrtree_order_from_edges_cpp(
-        n_vertices = ncol(dp),
-        edges = mst_edges,
-        weights = as.numeric(dp[cbind(mst_edges[, 1], mst_edges[, 2])]),
-        root_cell = root_idx
-      )
-      parent_names <- rep(NA_character_, length(vertex_names))
-      has_parent <- fast_ordering$parent > 0L
-      parent_names[has_parent] <- vertex_names[fast_ordering$parent[has_parent]]
-      data.frame(
-        sample_name = vertex_names,
-        cell_state = factor(fast_ordering$state),
-        pseudo_time = as.vector(fast_ordering$pseudotime),
-        parent = parent_names,
-        stringsAsFactors = FALSE
-      )
-    }, error = function(e) {
-      warning("Fast C++ DDRTree ordering fallback to R: ", e$message, call. = FALSE)
-      NULL
-    })
+    )
     if (!is.null(fast_df)) {
       row.names(fast_df) <- fast_df$sample_name
       return(fast_df)
@@ -843,30 +707,33 @@ select_root_cell <- function(cds, root_state = NULL, reverse = FALSE) {
 
     if (isTRUE(getOption("monocle.fast_ordering", TRUE)) &&
       identical(row.names(pData(cds)), colnames(cds))) {
-      fast_root <- tryCatch({
-        prev_root <- cds@auxOrderingData[[cds@dim_reduce_type]]$root_cell
-        use_min_pseudotime <- FALSE
-        if (!is.null(prev_root) && !is.na(match(prev_root, row.names(pData(cds))))) {
-          use_min_pseudotime <- as.character(
-            pData(cds)[prev_root, "State"]
-          ) == as.character(root_state)
+      fast_root <- tryCatch(
+        {
+          prev_root <- cds@auxOrderingData[[cds@dim_reduce_type]]$root_cell
+          use_min_pseudotime <- FALSE
+          if (!is.null(prev_root) && !is.na(match(prev_root, row.names(pData(cds))))) {
+            use_min_pseudotime <- as.character(
+              pData(cds)[prev_root, "State"]
+            ) == as.character(root_state)
+          }
+          graph_point_idx <- ddrtree_select_root_by_state_cpp(
+            coords = thisutils::as_matrix(reducedDimS(cds)),
+            candidate_cells = as.integer(
+              match(row.names(root_cell_candidates), colnames(cds))
+            ),
+            pseudotime = as.numeric(pData(cds)$Pseudotime),
+            closest_vertex = as.integer(
+              cds@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_closest_vertex
+            ),
+            use_min_pseudotime = isTRUE(use_min_pseudotime)
+          )
+          igraph::V(minSpanningTree(cds))[graph_point_idx]$name
+        },
+        error = function(e) {
+          warning("Fast C++ root cell selection fallback to R: ", e$message, call. = FALSE)
+          NULL
         }
-        graph_point_idx <- ddrtree_select_root_by_state_cpp(
-          coords = thisutils::as_matrix(reducedDimS(cds)),
-          candidate_cells = as.integer(
-            match(row.names(root_cell_candidates), colnames(cds))
-          ),
-          pseudotime = as.numeric(pData(cds)$Pseudotime),
-          closest_vertex = as.integer(
-            cds@auxOrderingData[["DDRTree"]]$pr_graph_cell_proj_closest_vertex
-          ),
-          use_min_pseudotime = isTRUE(use_min_pseudotime)
-        )
-        igraph::V(minSpanningTree(cds))[graph_point_idx]$name
-      }, error = function(e) {
-        warning("Fast C++ root cell selection fallback to R: ", e$message, call. = FALSE)
-        NULL
-      })
+      )
       if (!is.null(fast_root)) {
         return(fast_root)
       }
@@ -957,10 +824,11 @@ select_root_cell <- function(cds, root_state = NULL, reverse = FALSE) {
 #' @return an updated CellDataSet object, in which phenoData contains values for State and Pseudotime for each cell
 #' @export
 orderCells <- function(
-    cds,
-    root_state = NULL,
-    num_paths = NULL,
-    reverse = NULL) {
+  cds,
+  root_state = NULL,
+  num_paths = NULL,
+  reverse = NULL
+) {
   if (class(cds)[1] != "CellDataSet") {
     log_message(
       "Error cds is not of type 'CellDataSet'",
@@ -1087,10 +955,11 @@ orderCells <- function(
 }
 
 normalize_expr_data <- function(
-    cds,
-    norm_method = c("log", "vstExprs", "none"),
-    pseudo_expr = 1,
-    relative_expr = TRUE) {
+  cds,
+  norm_method = c("log", "vstExprs", "none"),
+  pseudo_expr = 1,
+  relative_expr = TRUE
+) {
   FM <- exprs(cds)
   use_for_ordering <- NULL
   if (is.null(fData(cds)$use_for_ordering) == FALSE &&
@@ -1151,9 +1020,7 @@ normalize_expr_data <- function(
     }
   } else if (cds@expressionFamily@vfamily == "Tobit") {
     FM <- FM + pseudo_expr
-    if (norm_method == "none") {
-
-    } else if (norm_method == "log") {
+    if (norm_method == "none") {} else if (norm_method == "log") {
       FM <- log2(FM)
     } else {
       stop("Error: the only normalization methods supported with Tobit-distributed (e.g. FPKM/TPM) data are 'log' (recommended) or 'none'")
@@ -1225,17 +1092,18 @@ normalize_expr_data <- function(
 #'
 #' @export
 reduceDimension <- function(
-    cds,
-    max_components = 2,
-    reduction_method = c("DDRTree", "ICA", "tSNE", "SimplePPT", "L1-graph", "SGL-tree"),
-    norm_method = c("log", "vstExprs", "none"),
-    residualModelFormulaStr = NULL,
-    pseudo_expr = 1,
-    relative_expr = TRUE,
-    auto_param_selection = TRUE,
-    verbose = FALSE,
-    scaling = TRUE,
-    ...) {
+  cds,
+  max_components = 2,
+  reduction_method = c("DDRTree", "ICA", "tSNE", "SimplePPT", "L1-graph", "SGL-tree"),
+  norm_method = c("log", "vstExprs", "none"),
+  residualModelFormulaStr = NULL,
+  pseudo_expr = 1,
+  relative_expr = TRUE,
+  auto_param_selection = TRUE,
+  verbose = FALSE,
+  scaling = TRUE,
+  ...
+) {
   extra_arguments <- list(...)
   set.seed(2016)
 
@@ -1460,21 +1328,24 @@ project2MST <- function(cds, Projection_Method) {
   if (is.function(Projection_Method) &&
     identical(Projection_Method, project_point_to_line_segment) &&
     isTRUE(getOption("monocle.fast_ordering", TRUE))) {
-    fast_proj <- tryCatch({
-      center_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
-      if (length(center_edges) == 0) {
-        center_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+    fast_proj <- tryCatch(
+      {
+        center_edges <- igraph::as_edgelist(dp_mst, names = FALSE)
+        if (length(center_edges) == 0) {
+          center_edges <- matrix(integer(0), nrow = 0, ncol = 2)
+        }
+        ddrtree_project_cells_to_mst_cpp(
+          z = thisutils::as_matrix(Z),
+          y = thisutils::as_matrix(Y),
+          graph_edges = matrix(as.integer(center_edges), ncol = 2L),
+          closest_vertex = as.integer(closest_vertex)
+        )
+      },
+      error = function(e) {
+        warning("Fast C++ MST projection fallback to R: ", e$message, call. = FALSE)
+        NULL
       }
-      ddrtree_project_cells_to_mst_cpp(
-        z = thisutils::as_matrix(Z),
-        y = thisutils::as_matrix(Y),
-        graph_edges = matrix(as.integer(center_edges), ncol = 2L),
-        closest_vertex = as.integer(closest_vertex)
-      )
-    }, error = function(e) {
-      warning("Fast C++ MST projection fallback to R: ", e$message, call. = FALSE)
-      NULL
-    })
+    )
   }
 
   if (!is.function(Projection_Method)) {
@@ -1602,91 +1473,6 @@ project_point_to_line_segment <- function(p, df) {
   return(q)
 }
 
-traverseTree <- function(g, starting_cell, end_cells) {
-  distance <- igraph::distances(g, v = starting_cell, to = end_cells)
-  branchPoints <- which(igraph::degree(g) == 3)
-  path <- igraph::shortest_paths(g, from = starting_cell, end_cells)
-
-  return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))
-}
-
-traverseTreeCDS <- function(cds, starting_cell, end_cells) {
-  subset_cell <- c()
-  dp_mst <- cds@minSpanningTree
-
-  for (end_cell in end_cells) {
-    traverse_res <- traverseTree(dp_mst, starting_cell, end_cell)
-    path_cells <- names(traverse_res$shortest_path[[1]])
-
-    subset_cell <- c(subset_cell, path_cells)
-  }
-
-  subset_cell <- unique(subset_cell)
-  cds_subset <- SubSet_cds(cds, subset_cell)
-
-  root_state <- pData(cds_subset[, starting_cell])[, "State"]
-  cds_subset <- orderCells(cds_subset, root_state = as.numeric(root_state))
-
-  return(cds_subset)
-}
-
-SubSet_cds <- function(cds, cells) {
-  cells <- unique(cells)
-  if (ncol(reducedDimK(cds)) != ncol(cds)) {
-    stop("SubSet_cds doesn't support cds with ncenter run for now. You can try to subset the data and do the construction of trajectory on the subset cds")
-  }
-
-  exprs_mat <- as(thisutils::as_matrix(cds[, cells]), "sparseMatrix")
-  cds_subset <- newCellDataSet(exprs_mat,
-    phenoData = new("AnnotatedDataFrame", data = pData(cds)[colnames(exprs_mat), ]),
-    featureData = new("AnnotatedDataFrame", data = fData(cds)),
-    expressionFamily = negbinomial.size(),
-    lowerDetectionLimit = 1
-  )
-  BiocGenerics::sizeFactors(cds_subset) <- BiocGenerics::sizeFactors(cds[, cells])
-  cds_subset@dispFitInfo <- cds@dispFitInfo
-
-  cds_subset@reducedDimW <- cds@reducedDimW
-  cds_subset@reducedDimS <- cds@reducedDimS[, cells]
-  cds_subset@reducedDimK <- cds@reducedDimK[, cells]
-
-  cds_subset@cellPairwiseDistances <- cds@cellPairwiseDistances[cells, cells]
-
-  adjusted_K <- Matrix::t(reducedDimK(cds_subset))
-  dp <- thisutils::as_matrix(stats::dist(adjusted_K))
-  cellPairwiseDistances(cds_subset) <- dp
-  gp <- igraph::graph_from_adjacency_matrix(dp, mode = "undirected", weighted = TRUE)
-  dp_mst <- igraph::mst(gp)
-  minSpanningTree(cds_subset) <- dp_mst
-  cds_subset@dim_reduce_type <- "DDRTree"
-  cds_subset <- findNearestPointOnMST(cds_subset)
-
-  cds_subset <- orderCells(cds_subset)
-}
-
-reverseEmbeddingCDS <- function(cds) {
-  if (nrow(cds@reducedDimW) < 1) {
-    stop("You need to first apply reduceDimension function on your cds before the reverse embedding")
-  }
-
-  FM <- normalize_expr_data(cds, norm_method = "log")
-
-  FM <- FM[row_mean_var(FM)$var > 0, ]
-
-  reverse_embedding_data <- reducedDimW(cds) %*% reducedDimS(cds)
-  row.names(reverse_embedding_data) <- row.names(FM)
-
-  cds_subset <- cds[row.names(FM), ]
-
-  reverse_embedding_data <- Matrix::t(apply(reverse_embedding_data, 1, function(x) x + abs(min(x))))
-
-  raw_data <- thisutils::as_matrix(exprs(cds)[row.names(FM), ])
-  reverse_embedding_data <- reverse_embedding_data * (apply(raw_data, 1, function(x) stats::quantile(x, 0.99))) / apply(reverse_embedding_data, 1, max)
-
-  Biobase::exprs(cds_subset) <- reverse_embedding_data
-
-  return(cds_subset)
-}
 
 cal_ncenter <- function(ncells, ncells_limit = 100) {
   round(2 * ncells_limit * log(ncells) / (log(ncells) + log(ncells_limit)))

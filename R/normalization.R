@@ -4,12 +4,6 @@ makeprobsvec <- function(p) {
   phat
 }
 
-makeprobs <- function(a) {
-  colSums <- apply(a, 2, sum)
-  b <- Matrix::t(Matrix::t(a) / colSums)
-  b[is.na(b)] <- 0
-  b
-}
 
 shannon.entropy <- function(p) {
   if (min(p) < 0 || sum(p) <= 0) {
@@ -28,59 +22,6 @@ JSdistVec <- function(p, q) {
   JSdist
 }
 
-opt_norm_t <- function(t, fpkm, mRNAs_for_mode, kb_slope, kb_intercept, expr_thresh = 0.1, pseudocnt = NULL, return_norm = FALSE) {
-  a_matrix <- matrix(c(
-    log10(t), 1, kb_slope,
-    -1
-  ), ncol = 2, nrow = 2, byrow = T)
-  colnames(a_matrix) <- c("k", "b")
-  b_matrix <- matrix(c(log10(mRNAs_for_mode), -kb_intercept), nrow = 2, byrow = T)
-  kb <- Matrix::t(solve(a_matrix, b_matrix))
-
-  k <- kb[1]
-  b <- kb[2]
-  tmp <- k * log10(fpkm) + b
-  abs_cnt <- 10^tmp
-  abs_cnt[!is.finite(abs_cnt)] <- 0
-
-  selected <- abs_cnt[abs_cnt > expr_thresh & is.na(abs_cnt) == FALSE]
-  if (length(selected) == 0) {
-    return(0)
-  }
-
-  if (return_norm) {
-    return(abs_cnt)
-  }
-
-  if (!is.null(pseudocnt)) {
-    10^dmode(log10(selected + pseudocnt))
-  } else {
-    10^dmode(log10(selected))
-  }
-}
-
-opt_norm_kb <- function(relative_expr, kb) {
-  k <- kb[1]
-  b <- kb[2]
-  tmp <- k * log10(relative_expr) + b
-  abs_cnt <- 10^tmp
-
-  selected <- abs_cnt[abs_cnt > 0 & is.na(abs_cnt) == FALSE]
-  if (length(selected) == 0) {
-    return(0)
-  }
-
-  10^dmode(log10(selected))
-}
-
-norm_kb <- function(kb, exprs_cds) {
-  k <- kb[1]
-  b <- kb[2]
-  tmp <- k * log10(exprs_cds) + b
-  norm_exprs <- 10^tmp
-
-  norm_exprs
-}
 
 dmode <- function(x, breaks = "Sturges") {
   if (length(x) < 2) {
@@ -185,20 +126,21 @@ calibrate_per_cell_total_proposal <- function(relative_exprs_matrix, t_estimate,
 #' )
 #' }
 relative2abs <- function(
-    relative_cds,
-    t_estimate = estimate_t(exprs(relative_cds)),
-    modelFormulaStr = "~1",
-    ERCC_controls = NULL,
-    ERCC_annotation = NULL,
-    volume = 10,
-    dilution = 40000,
-    mixture_type = 1,
-    detection_threshold = 800,
-    expected_capture_rate = 0.25,
-    verbose = FALSE,
-    return_all = FALSE,
-    method = c("num_genes", "tpm_fraction"),
-    cores = 1) {
+  relative_cds,
+  t_estimate = estimate_t(exprs(relative_cds)),
+  modelFormulaStr = "~1",
+  ERCC_controls = NULL,
+  ERCC_annotation = NULL,
+  volume = 10,
+  dilution = 40000,
+  mixture_type = 1,
+  detection_threshold = 800,
+  expected_capture_rate = 0.25,
+  verbose = FALSE,
+  return_all = FALSE,
+  method = c("num_genes", "tpm_fraction"),
+  cores = 1
+) {
   FPKM <- NULL
   relative_expr_matrix <- exprs(relative_cds)
 
